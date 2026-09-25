@@ -39,6 +39,7 @@ var look_input=Vector2.ZERO
 var camera_yaw=0.0
 var camera_pitch=12.0
 var camera_shake=0.0
+var enemy_shots:Array[Dictionary]=[]
 var wave=1
 var wave_timer=4.0
 var defeated=0
@@ -48,7 +49,7 @@ func _ready():
     call_deferred("_start_alpha")
 
 func _start_alpha():
-    say("YOKAI ALPHA 0.1",3)
+    say("YOKAI ALPHA 0.2",3)
     await get_tree().process_frame
     build_world()
     await get_tree().process_frame
@@ -88,7 +89,7 @@ func _process(d):
             elif wave%5==0:
                 say("YOMI WAVE %d"%wave,1.5)
     if combo_t<=0:combo=0
-    move_player(d); tick_enemies(d); tick_shots(d); tick_fx(d); tick_camera(d); update_ui()
+    move_player(d); tick_enemies(d); tick_shots(d); tick_enemy_shots(d); tick_fx(d); tick_camera(d); update_ui()
 
 func make_mat(c:Color,r=.5,e=0.0):
     var m=StandardMaterial3D.new();m.albedo_color=c;m.roughness=r
@@ -406,6 +407,15 @@ func tick_shots(d):
                 damage_enemy(e,q.d,q.v.normalized(),q.school==2);burst(q.n.position,Color.WHITE,14);hit=true;break
         if hit or q.t<=0:q.n.queue_free();shots.erase(q)
 
+func tick_enemy_shots(d):
+    for q in enemy_shots.duplicate():
+        if not is_instance_valid(q.n):enemy_shots.erase(q);continue
+        q.t-=d;q.n.position+=q.v*d
+        if q.n.position.distance_to(player.position+Vector3.UP*.8)<.9:
+            take_damage(q.d);burst(q.n.position,Color("#ff6a55"),8);q.n.queue_free();enemy_shots.erase(q)
+        elif q.t<=0:
+            q.n.queue_free();enemy_shots.erase(q)
+
 func spawn_enemy(p,boss=false):
     var n=CharacterBody3D.new();n.position=p;add_child(n)
     var cs=CollisionShape3D.new();var s=CapsuleShape3D.new();s.radius=.5 if not boss else .72;s.height=1.8 if not boss else 2.5;cs.shape=s;cs.position.y=s.height*.5;n.add_child(cs)
@@ -444,8 +454,13 @@ func tick_enemies(d):
                 var phase_now=int(e.n.get_meta("phase",1))
                 e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else 1.55
                 var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else 9
-                impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else .55,Color("#ff4f86") if e.boss else Color("#9c79ff"))
-                take_damage(attack_damage)
+                if not e.boss and str(e.n.get_meta("type","duelist"))=="hunter" and dist>4.0:
+                    var bolt=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.12;sm.height=.24;bolt.mesh=sm;bolt.position=e.n.position+Vector3.UP*1.25;bolt.material_override=make_mat(Color("#ff8b6b"),.08,3.0);add_child(bolt)
+                    enemy_shots.append({"n":bolt,"v":to.normalized()*12.0,"t":2.0,"d":13.0})
+                    impact_ring(e.n.position+Vector3.UP*.1,.7,Color("#ff8b6b"))
+                else:
+                    impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else .55,Color("#ff4f86") if e.boss else Color("#9c79ff"))
+                    take_damage(attack_damage)
         e.n.move_and_slide();e.n.position.y=0
 
 func take_damage(a):
