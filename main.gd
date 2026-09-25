@@ -12,6 +12,11 @@ var combo_t := 0.0
 var attack_t := 0.0
 var dash_t := 0.0
 var souls := 0
+var xp := 0
+var level := 1
+var skill_points := 0
+var virtual_dir := Vector2.ZERO
+var paused := false
 var hpbar: ProgressBar
 var stbar: ProgressBar
 var mpbar: ProgressBar
@@ -76,7 +81,10 @@ func _player():
     camera=Camera3D.new(); camera.fov=58; camera.current=true; add_child(camera); camera.position=Vector3(0,7,11)
 
 func move_player(d):
-    var v=Vector2(Input.get_axis("ui_left","ui_right"),Input.get_axis("ui_up","ui_down")); var dir=Vector3(v.x,0,v.y)
+    if paused: return
+    var v=Vector2(Input.get_axis("ui_left","ui_right"),Input.get_axis("ui_up","ui_down"))
+    if virtual_dir.length() > 0.05: v=virtual_dir
+    var dir=Vector3(v.x,0,v.y)
     if dir.length()>.05:
         dir=dir.normalized(); player.velocity.x=move_toward(player.velocity.x,dir.x*8,d*30); player.velocity.z=move_toward(player.velocity.z,dir.z*8,d*30); player.look_at(player.global_position+dir,Vector3.UP)
     else:
@@ -97,6 +105,7 @@ func hit(heavy:bool):
             e.n.set_meta("hp",float(e.n.get_meta("hp"))-dmg); burst(e.n.position+Vector3.UP,Color("#ff4f86"),9)
             if float(e.n.get_meta("hp"))<=0:
                 souls+=100 if not e.boss else 1000
+                gain_xp(250 if e.boss else 45)
                 if e.boss: say("TSUKUYOMI DEFEATED",5.0)
                 e.n.queue_free(); enemies.erase(e)
 
@@ -115,11 +124,15 @@ func enemies_tick(d):
         if not is_instance_valid(e.n): enemies.erase(e); continue
         var to=player.position-e.n.position; to.y=0; var dist=to.length()
         if dist>2.7:
-            var q=to.normalized(); e.n.velocity.x=q.x*(2.2 if e.boss else 1.6); e.n.velocity.z=q.z*(2.2 if e.boss else 1.6); e.n.look_at(e.n.position+q,Vector3.UP)
+            var q=to.normalized()
+            var enraged=e.boss and float(e.n.get_meta("hp"))<260.0
+            var speed=3.15 if enraged else (2.2 if e.boss else 1.6)
+            e.n.velocity.x=q.x*speed; e.n.velocity.z=q.z*speed; e.n.look_at(e.n.position+q,Vector3.UP)
         else:
             e.n.velocity.x=move_toward(e.n.velocity.x,0,d*10); e.n.velocity.z=move_toward(e.n.velocity.z,0,d*10); e.a-=d
             if e.a<=0:
-                e.a=1.4 if e.boss else 2.0; hp-=12 if e.boss else 7; burst(player.position+Vector3.UP,Color("#ff405e"),5)
+                var enraged=e.boss and float(e.n.get_meta("hp"))<260.0
+                e.a=.75 if enraged else (1.4 if e.boss else 2.0); hp-=18 if enraged else (12 if e.boss else 7); burst(player.position+Vector3.UP,Color("#ff405e"),5)
                 if hp<=0: hp=100; say("DEFEAT — THE SPIRIT RETURNS",2)
         e.n.move_and_slide(); e.n.position.y=1.6 if e.boss else 1.1
 
@@ -143,9 +156,16 @@ func _ui():
     var title=Label.new(); title.text="YOKAI  //  SHADOW OF IZANAMI"; title.position=Vector2(34,25); title.add_theme_font_size_override("font_size",22); title.add_theme_color_override("font_color",Color("#e8c77d")); layer.add_child(title)
     hpbar=bar(layer,Vector2(34,60),Color("#d83f63")); stbar=bar(layer,Vector2(34,82),Color("#59cfa3")); mpbar=bar(layer,Vector2(34,104),Color("#7668e8"))
     info=Label.new(); info.position=Vector2(470,25); info.add_theme_font_size_override("font_size",20); layer.add_child(info)
-    for spec in [["ATTACK",Vector2(950,590),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"]]:
+    for spec in [["ATTACK",Vector2(950,590),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"],["ULTIMATE",Vector2(1015,505),"ultimate"]]:
         var b=Button.new(); b.text=spec[0]; b.position=spec[1]; b.size=Vector2(130,65); b.add_theme_font_size_override("font_size",17); layer.add_child(b)
         b.pressed.connect(func(): mobile_action(spec[2]))
+    var left=Button.new(); left.text="◀"; left.position=Vector2(40,585); left.size=Vector2(70,65); layer.add_child(left); left.button_down.connect(func(): virtual_dir.x=-1); left.button_up.connect(func(): virtual_dir.x=0)
+    var right=Button.new(); right.text="▶"; right.position=Vector2(180,585); right.size=Vector2(70,65); layer.add_child(right); right.button_down.connect(func(): virtual_dir.x=1); right.button_up.connect(func(): virtual_dir.x=0)
+    var up=Button.new(); up.text="▲"; up.position=Vector2(110,515); up.size=Vector2(70,65); layer.add_child(up); up.button_down.connect(func(): virtual_dir.y=-1); up.button_up.connect(func(): virtual_dir.y=0)
+    var down=Button.new(); down.text="▼"; down.position=Vector2(110,655); down.size=Vector2(70,55); layer.add_child(down); down.button_down.connect(func(): virtual_dir.y=1); down.button_up.connect(func(): virtual_dir.y=0)
+    var save=Button.new(); save.text="SAVE"; save.position=Vector2(20,440); save.size=Vector2(100,48); layer.add_child(save); save.pressed.connect(save_game)
+    var load=Button.new(); load.text="LOAD"; load.position=Vector2(130,440); load.size=Vector2(100,48); layer.add_child(load); load.pressed.connect(load_game)
+    var pause=Button.new(); pause.text="Ⅱ"; pause.position=Vector2(1190,25); pause.size=Vector2(65,55); layer.add_child(pause); pause.pressed.connect(toggle_pause)
     banner=Label.new(); banner.position=Vector2(0,245); banner.size=Vector2(1280,80); banner.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; banner.add_theme_font_size_override("font_size",34); banner.add_theme_color_override("font_color",Color("#f0c878")); layer.add_child(banner)
 
 func bar(layer,pos,c):
@@ -154,7 +174,13 @@ func bar(layer,pos,c):
     b.add_theme_stylebox_override("background",bg); b.add_theme_stylebox_override("fill",fill); layer.add_child(b); return b
 
 func mobile_action(a):
-    if a=="attack" and attack_t<=0: hit(false)
+    if a=="ultimate" and attack_t<=0 and mana>=40:
+        mana-=40; attack_t=1.0; combo+=3; combo_t=1.5; burst(player.position+Vector3.UP,Color("#d78cff"),45)
+        for e in enemies.duplicate():
+            if is_instance_valid(e.n) and player.position.distance_to(e.n.position)<8.0:
+                e.n.set_meta("hp",float(e.n.get_meta("hp"))-140)
+        say("YOKAI ART — MOONFALL",2.0)
+    elif a=="attack" and attack_t<=0: hit(false)
     elif a=="heavy" and attack_t<=0 and mana>=18: mana-=18; hit(true)
     elif a=="dash" and dash_t<=0 and stamina>=25: stamina-=25; dash_t=.65; player.velocity+=-player.global_transform.basis.z*18
 
@@ -163,8 +189,31 @@ func ui_tick():
     var boss_hp=0
     for e in enemies:
         if e.boss: boss_hp=int(e.n.get_meta("hp"))
-    info.text="HP %d   ST %d   SP %d   COMBO x%d   SOULS %d" % [hp,stamina,mana,combo,souls]
-    if boss_hp>0: info.text+="\nTSUKUYOMI  %d / 520"%boss_hp
+    info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d" % [level,hp,stamina,mana,combo,souls,xp,level*250]
+    if boss_hp>0:
+        info.text+="\nTSUKUYOMI  %d / 520" % boss_hp
+        if boss_hp<260: info.text+="  • ENRAGED"
+
+func gain_xp(amount:int):
+    xp+=amount
+    while xp>=level*250:
+        xp-=level*250; level+=1; skill_points+=1; hp=100; stamina=100; mana=100
+        say("LEVEL UP  •  SOUL LEVEL %d" % level,2.5)
+
+func save_game():
+    var data={"hp":hp,"stamina":stamina,"mana":mana,"souls":souls,"xp":xp,"level":level,"skill_points":skill_points,"pos":[player.position.x,player.position.y,player.position.z]}
+    var file=FileAccess.open("user://yokai_save.json",FileAccess.WRITE); file.store_string(JSON.stringify(data)); say("GAME SAVED",1.5)
+
+func load_game():
+    if not FileAccess.file_exists("user://yokai_save.json"): say("NO SAVE FOUND",1.5); return
+    var file=FileAccess.open("user://yokai_save.json",FileAccess.READ); var data=JSON.parse_string(file.get_as_text())
+    if data:
+        hp=data.get("hp",100); stamina=data.get("stamina",100); mana=data.get("mana",100); souls=data.get("souls",0); xp=data.get("xp",0); level=data.get("level",1); skill_points=data.get("skill_points",0)
+        var p=data.get("pos",[0,1.2,15]); player.position=Vector3(p[0],p[1],p[2]); say("GAME LOADED",1.5)
+
+func toggle_pause():
+    paused=!paused
+    if banner: banner.text="PAUSED" if paused else ""
 
 func say(t:String,sec:float):
     if banner: banner.text=t; get_tree().create_timer(sec).timeout.connect(func(): if is_instance_valid(banner): banner.text="")
