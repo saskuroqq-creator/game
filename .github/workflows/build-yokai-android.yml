@@ -68,7 +68,7 @@ jobs:
         run: |
           set -e
           mkdir -p release
-          APK="$HOME/.local/share/godot/builds/Android/YOKAIShadowsOfIzanami.apk"
+          APK="$HOME/.local/share/godot/builds/Android/YOKAI_Shadow_of_Izanami_TSUYOMI_1.8.0.apk"
           test -f "$APK"
           cp "$APK" release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk
           sha256sum release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk > release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk.sha256
