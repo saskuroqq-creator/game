@@ -34,7 +34,7 @@ func _process(d):
     stamina=minf(100.0,stamina+d*20.0); mana=minf(100.0,mana+d*5.0)
     move_player(d); enemies_tick(d); fx_tick(d); camera_tick(d); ui_tick()
 
-func mat(c:Color,emit:=0.0)->StandardMaterial3D:
+func mat(c:Color,rough:=.45,emit:=0.0)->StandardMaterial3D:
     var m=StandardMaterial3D.new(); m.albedo_color=c; m.roughness=.45
     if emit>0: m.emission_enabled=true; m.emission=c; m.emission_energy_multiplier=emit
     return m
