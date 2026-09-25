@@ -64,6 +64,27 @@ func _process(d):
     attack_t=maxf(0,attack_t-d); dash_t=maxf(0,dash_t-d); combo_t=maxf(0,combo_t-d)
     parry_t=maxf(0,parry_t-d); invuln_t=maxf(0,invuln_t-d)
     stamina=minf(100,stamina+d*(20+mobility*3)); mana=minf(100,mana+d*(5+magic_power*1.5))
+    wave_timer-=d
+    if wave_timer<=0 and not paused:
+        wave_timer=5.5
+        var living=0
+        var boss_alive=false
+        for e in enemies:
+            if is_instance_valid(e.n):
+                living+=1
+                boss_alive = boss_alive or e.boss
+        if living<6 and defeated<80:
+            wave+=1
+            var spawn_count=min(4,2+int(wave/5))
+            for i in range(spawn_count):
+                var ang=randf_range(0.0,TAU)
+                var dist=randf_range(12.0,22.0)
+                spawn_enemy(player.position+Vector3(cos(ang)*dist,0,sin(ang)*dist),false)
+            if wave%5==0 and not boss_alive:
+                spawn_enemy(player.position+Vector3(0,0,-18),true)
+                say("YOMI WAVE %d • BOSS RISING"%wave,2.2)
+            elif wave%5==0:
+                say("YOMI WAVE %d"%wave,1.5)
     if combo_t<=0:combo=0
     move_player(d); tick_enemies(d); tick_shots(d); tick_fx(d); tick_camera(d); update_ui()
 
@@ -378,7 +399,10 @@ func spawn_enemy(p,boss=false):
     var cs=CollisionShape3D.new();var s=CapsuleShape3D.new();s.radius=.5 if not boss else .72;s.height=1.8 if not boss else 2.5;cs.shape=s;cs.position.y=s.height*.5;n.add_child(cs)
     var v=human_visual(true)
     if v:v.scale*=1.08 if boss else .98;n.add_child(v)
-    n.set_meta("hp",850.0 if boss else 140.0);n.set_meta("stagger",0.0);n.set_meta("elite",not boss and randf()<.25)
+    var elite=not boss and randf()<.25
+    var base_hp=140.0+float(wave-1)*18.0
+    if elite:base_hp*=1.65
+    n.set_meta("hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite)
     enemies.append({"n":n,"boss":boss,"a":randf_range(.4,1.5)})
 
 func tick_enemies(d):
