@@ -1,7 +1,7 @@
 [application]
 config/name="YOKAI: Shadow of Izanami"
 run/main_scene="res://main.tscn"
-config/features=PackedStringArray("4.7", "GL Compatibility")
+config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [display]
@@ -13,7 +13,9 @@ window/stretch/mode="canvas_items"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.mobile="mobile"
+renderer/rendering_method.driver="vulkan"
+renderer/rendering_method.mobile.driver="vulkan"
 textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.015,0.012,0.025,1)
 
