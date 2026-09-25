@@ -34,7 +34,7 @@ var info:Label
 var banner:Label
 var skills:Label
 var weapon:Node3D
-var world_time=0.0
+var world_time=0.0\nvar look_input=Vector2.ZERO\nvar camera_yaw=0.0\nvar camera_pitch=12.0
 
 func _ready():
     build_world()
@@ -76,6 +76,8 @@ func build_world():
         var a=TAU*i/20.0;lantern(Vector3(cos(a)*13,0,sin(a)*13))
     for z in [-5.0,-18.0,-31.0]: gate(z)
     for i in range(20): tree(Vector3(-35+(i%10)*7,0,-39+(i/10)*8))
+    for i in range(42): rock(Vector3(-42+fmod(i*17.3,84),0,-42+fmod(i*31.7,84)),0.5+fmod(i*1.7,1.8))
+    for i in range(28): shrine_prop(Vector3(-40+fmod(i*23.1,80),0,-38+fmod(i*13.7,76)))
 
 func pillar(p:Vector3,h):
     var n=MeshInstance3D.new();var m=CylinderMesh.new();m.top_radius=.65;m.bottom_radius=1;m.height=h;n.mesh=m;n.position=p+Vector3.UP*h/2;n.material_override=make_mat(Color("#28232b"),.9);add_child(n)
@@ -89,6 +91,13 @@ func tree(p):
     var t=MeshInstance3D.new();var cm=CylinderMesh.new();cm.top_radius=.18;cm.bottom_radius=.32;cm.height=3.2;t.mesh=cm;t.position.y=1.6;t.material_override=make_mat(Color("#2a211c"),1);n.add_child(t)
     for j in range(3):
         var c=MeshInstance3D.new();var s=SphereMesh.new();s.radius=1.5;s.height=3;c.mesh=s;c.position=Vector3(sin(j*2.1)*.9,3.3,cos(j*2.1)*.9);c.material_override=make_mat(Color("#14251d"),.95);n.add_child(c)
+
+func rock(p:Vector3,s:float):
+    var n=MeshInstance3D.new();var m=SphereMesh.new();m.radius=s;m.height=s*1.35;n.mesh=m;n.position=p+Vector3.UP*s*.35;n.scale=Vector3(1.3,.65,.9);n.rotation_degrees=Vector3(fmod(p.x*17,25),fmod(p.z*23,360),fmod(p.x*9,18));n.material_override=make_mat(Color("#29272a"),1);add_child(n)
+
+func shrine_prop(p:Vector3):
+    var n=MeshInstance3D.new();var b=BoxMesh.new();b.size=Vector3(1.4,.35,1.4);n.mesh=b;n.position=p+Vector3.UP*.18;n.material_override=make_mat(Color("#3b3027"),.9);add_child(n)
+    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.1;l.light_color=Color("#d98755");l.light_energy=.7;l.omni_range=3;add_child(l)
 
 func gate(z):
     for x in [-6.0,6.0]:
@@ -237,10 +246,16 @@ func build_ui():
     var specs=[["ATK",Vector2(940,580),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"],["MOON",Vector2(930,500),"m0"],["FIRE",Vector2(1030,455),"m1"],["VOID",Vector2(1130,455),"m2"],["PARRY",Vector2(790,610),"parry"]]
     for a in specs:
         var b=Button.new();b.text=a[0];b.position=a[1];b.size=Vector2(120,55);layer.add_child(b);b.pressed.connect(func():mobile(a[2]))
-    var left=Button.new();left.text="◀";left.position=Vector2(40,585);left.size=Vector2(70,65);layer.add_child(left);left.button_down.connect(func():virtual_dir.x=-1);left.button_up.connect(func():virtual_dir.x=0)
-    var right=Button.new();right.text="▶";right.position=Vector2(180,585);right.size=Vector2(70,65);layer.add_child(right);right.button_down.connect(func():virtual_dir.x=1);right.button_up.connect(func():virtual_dir.x=0)
-    var up=Button.new();up.text="▲";up.position=Vector2(110,515);up.size=Vector2(70,65);layer.add_child(up);up.button_down.connect(func():virtual_dir.y=-1);up.button_up.connect(func():virtual_dir.y=0)
-    var down=Button.new();down.text="▼";down.position=Vector2(110,655);down.size=Vector2(70,55);layer.add_child(down);down.button_down.connect(func():virtual_dir.y=1);down.button_up.connect(func():virtual_dir.y=0)
+    var joy=VirtualJoystick.new()
+    joy.name="MovementJoystick";joy.position=Vector2(34,500);joy.size=Vector2(210,210)
+    joy.joystick_size=185;joy.tip_size=82;joy.deadzone_ratio=.12;joy.joystick_mode=VirtualJoystick.JOYSTICK_FIXED
+    joy.action_up=&"ui_up";joy.action_down=&"ui_down";joy.action_left=&"ui_left";joy.action_right=&"ui_right"
+    layer.add_child(joy)
+    var look=VirtualJoystick.new()
+    look.name="CameraJoystick";look.position=Vector2(1030,500);look.size=Vector2(210,210)
+    look.joystick_size=185;look.tip_size=82;look.deadzone_ratio=.14;look.joystick_mode=VirtualJoystick.JOYSTICK_FIXED
+    look.action_up=&"ui_page_up";look.action_down=&"ui_page_down";look.action_left=&"ui_home";look.action_right=&"ui_end"
+    layer.add_child(look)
     var save=Button.new();save.text="SAVE";save.position=Vector2(20,440);save.size=Vector2(100,48);layer.add_child(save);save.pressed.connect(save_game)
     var load=Button.new();load.text="LOAD";load.position=Vector2(130,440);load.size=Vector2(100,48);layer.add_child(load);load.pressed.connect(load_game)
     var pause=Button.new();pause.text="Ⅱ";pause.position=Vector2(1190,25);pause.size=Vector2(65,55);layer.add_child(pause);pause.pressed.connect(toggle_pause)
