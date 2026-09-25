@@ -67,7 +67,7 @@ func build_world():
     e.background_mode=Environment.BG_COLOR;e.background_color=Color("#05050a")
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#665174");e.ambient_light_energy=.7
     e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=true;e.glow_intensity=1.2
-    e.volumetric_fog_enabled=true;e.volumetric_fog_density=.012;e.volumetric_fog_albedo=Color("#786d82")
+    e.volumetric_fog_enabled=false;e.fog_enabled=true;e.fog_light_color=Color("#746b80");e.fog_density=.012;e.fog_height=.0;e.fog_height_density=.018
     env.environment=e;add_child(env)
     var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
     var moon=OmniLight3D.new();moon.position=Vector3(0,12,0);moon.omni_range=65;moon.light_color=Color("#725de2");moon.light_energy=9;add_child(moon)
@@ -81,8 +81,30 @@ func build_world():
     for i in range(20): tree(Vector3(-35+(i%10)*7,0,-39+(i/10)*8))
     for i in range(42): rock(Vector3(-42+fmod(i*17.3,84),0,-42+fmod(i*31.7,84)),0.5+fmod(i*1.7,1.8))
     for i in range(28): shrine_prop(Vector3(-40+fmod(i*23.1,80),0,-38+fmod(i*13.7,76)))
+    cathedral_ruin(Vector3(0,0,-40))
+    cathedral_ruin(Vector3(29,0,-18))
+    for z in [-9.0,-25.0,-39.0]: stone_arch(Vector3(-27,0,z),1.0)
+    for i in range(24): grave_cluster(Vector3(-30+fmod(i*11.7,60),0,-36+fmod(i*17.1,68)),i%3==0)
 
-func pillar(p:Vector3,h):
+
+func cathedral_ruin(p:Vector3):
+    var root=Node3D.new();root.position=p;add_child(root)
+    for x in [-7.0,-3.5,3.5,7.0]:
+        var col=MeshInstance3D.new();var cm=CylinderMesh.new();cm.top_radius=.62;cm.bottom_radius=.9;cm.height=7.0+abs(x)*.18;col.mesh=cm;col.position=Vector3(x,3.5,0);col.material_override=make_mat(Color("#29262d"),.92);root.add_child(col)
+    var wall=MeshInstance3D.new();var wm=BoxMesh.new();wm.size=Vector3(16,6.5,1.1);wall.mesh=wm;wall.position=Vector3(0,3.2,1.8);wall.material_override=make_mat(Color("#211f25"),.98);root.add_child(wall)
+    for x in [-5.0,0.0,5.0]:
+        var arch=MeshInstance3D.new();var am=TorusMesh.new();am.inner_radius=1.25;am.outer_radius=1.55;arch.mesh=am;arch.rotation_degrees.x=90;arch.position=Vector3(x,3.2,1.22);arch.scale=Vector3(1,1.25,1);arch.material_override=make_mat(Color("#403a44"),.86);root.add_child(arch)
+    var spire=MeshInstance3D.new();var sm=CylinderMesh.new();sm.top_radius=0;sm.bottom_radius=2.1;sm.height=9;spire.mesh=sm;spire.position=Vector3(0,7.7,0);spire.material_override=make_mat(Color("#19171c"),.94);root.add_child(spire)
+
+func stone_arch(p:Vector3,scale_factor:float):
+    var root=Node3D.new();root.position=p;root.scale*=scale_factor;add_child(root)
+    for x in [-2.8,2.8]:
+        var post=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(1.2,5.8,1.2);post.mesh=bm;post.position=Vector3(x,2.9,0);post.material_override=make_mat(Color("#35313a"),.96);root.add_child(post)
+    var beam=MeshInstance3D.new();var bm2=BoxMesh.new();bm2.size=Vector3(7.4,1.25,1.25);beam.mesh=bm2;beam.position=Vector3(0,5.8,0);beam.material_override=make_mat(Color("#3c3740"),.92);root.add_child(beam)
+
+func grave_cluster(p:Vector3,large:bool):
+    var n=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(.55,.9,.18) if not large else Vector3(.8,1.4,.22);n.mesh=bm;n.position=p+Vector3.UP*(bm.size.y*.5);n.rotation_degrees=Vector3(0,fmod(p.x*17+p.z*9,360),fmod(p.z*4,9)-4);n.material_override=make_mat(Color("#343039"),.95);add_child(n)
+\nfunc pillar(p:Vector3,h):
     var n=MeshInstance3D.new();var m=CylinderMesh.new();m.top_radius=.65;m.bottom_radius=1;m.height=h;n.mesh=m;n.position=p+Vector3.UP*h/2;n.material_override=make_mat(Color("#28232b"),.9);add_child(n)
 
 func lantern(p):
@@ -216,7 +238,13 @@ func human_visual(enemy):
         boot.material_override=armor
         root.add_child(boot)
 
-    # A simple layered samurai cuirass and shoulder guards keeps the fallback readable at gameplay distance.
+
+    # Layered dark-fantasy samurai armor: worn plates, sash, cloak and a restrained helm silhouette.
+    var belt=MeshInstance3D.new();var belt_mesh=BoxMesh.new();belt_mesh.size=Vector3(.62,.10,.34)*scale_factor;belt.mesh=belt_mesh;belt.position=Vector3(0,.91*scale_factor,-.02);belt.material_override=armor2;root.add_child(belt)
+    var cloak=MeshInstance3D.new();var cloak_mesh=BoxMesh.new();cloak_mesh.size=Vector3(.72,.95,.10)*scale_factor;cloak.mesh=cloak_mesh;cloak.position=Vector3(0,1.08*scale_factor,.18);cloak.rotation_degrees.x=4;cloak.material_override=make_mat(Color("#0d0c11"),1);root.add_child(cloak)
+    var helm=MeshInstance3D.new();var hm=SphereMesh.new();hm.radius=.28*scale_factor;hm.height=.34*scale_factor;helm.mesh=hm;helm.position=Vector3(0,2.02*scale_factor,.01);helm.scale=Vector3(1.02,.72,1.02);helm.material_override=armor;root.add_child(helm)
+    var crest=MeshInstance3D.new();var cm=CylinderMesh.new();cm.top_radius=.025;cm.bottom_radius=.09;cm.height=.38*scale_factor;crest.mesh=cm;crest.position=Vector3(0,2.29*scale_factor,.01);crest.material_override=armor2;root.add_child(crest)
+\n    # A simple layered samurai cuirass and shoulder guards keeps the fallback readable at gameplay distance.
     for side in [-1.0,1.0]:
         var shoulder=MeshInstance3D.new()
         var sm=SphereMesh.new()
