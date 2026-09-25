@@ -1,0 +1,1 @@
+Automatic APK build trigger. GitHub Actions should rebuild the Android APK.
