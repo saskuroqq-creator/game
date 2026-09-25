@@ -281,16 +281,16 @@ func human_visual(enemy):
             eye_mesh.material_override=eye
             root.add_child(eye_mesh)
 
-    # Try the photoreal Vitruvian assets as an optional layer. If they are absent, malformed,
-    # or not imported in an Android build, the procedural humanoid above remains visible.
-    if ResourceLoader.exists(BODY):
+    # Android uses the procedural fallback for the alpha build. This avoids large external
+    # GLB imports during startup on Vulkan/mobile devices; desktop can still layer Vitruvian assets.
+    if OS.get_name() != "Android" and ResourceLoader.exists(BODY):
         var body_scene=load(BODY) as PackedScene
         if body_scene:
             var body=body_scene.instantiate()
             if body:
                 body.name="VitruvianBody"
                 root.add_child(body)
-    if ResourceLoader.exists(HEAD):
+    if OS.get_name() != "Android" and ResourceLoader.exists(HEAD):
         var head_scene=load(HEAD) as PackedScene
         if head_scene:
             var h=head_scene.instantiate()
@@ -298,7 +298,7 @@ func human_visual(enemy):
                 h.name="VitruvianHead"
                 h.position=Vector3(0,1.68,0)
                 root.add_child(h)
-    if ResourceLoader.exists(HAIR):
+    if OS.get_name() != "Android" and ResourceLoader.exists(HAIR):
         var hair_scene=load(HAIR) as PackedScene
         if hair_scene:
             var h=hair_scene.instantiate()
