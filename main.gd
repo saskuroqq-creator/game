@@ -42,6 +42,7 @@ var camera_shake=0.0
 var wave=1
 var wave_timer=4.0
 var defeated=0
+var boss_phase_announced:Dictionary={}
 
 func _ready():
     call_deferred("_start_alpha")
@@ -413,21 +414,37 @@ func spawn_enemy(p,boss=false):
     var elite=not boss and randf()<.25
     var base_hp=140.0+float(wave-1)*18.0
     if elite:base_hp*=1.65
-    n.set_meta("hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite)
+    n.set_meta("hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("max_hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite);n.set_meta("phase",1)
     enemies.append({"n":n,"boss":boss,"a":randf_range(.4,1.5)})
 
 func tick_enemies(d):
     for e in enemies.duplicate():
         if not is_instance_valid(e.n):enemies.erase(e);continue
         var to=player.position-e.n.position;to.y=0;var dist=to.length();var st=maxf(0,float(e.n.get_meta("stagger"))-d*45);e.n.set_meta("stagger",st)
+        if e.boss:
+            var max_hp=float(e.n.get_meta("max_hp"))
+            var ratio=float(e.n.get_meta("hp"))/max_hp
+            var phase=1 if ratio>.66 else (2 if ratio>.33 else 3)
+            var old_phase=int(e.n.get_meta("phase",1))
+            if phase!=old_phase:
+                e.n.set_meta("phase",phase)
+                var phase_color=Color("#9c79ff") if phase==2 else Color("#ff4f86")
+                burst(e.n.position+Vector3.UP*1.4,phase_color,24)
+                impact_ring(e.n.position+Vector3.UP*.15,2.2,phase_color)
+                camera_shake=.16
+                say("TSUKUYOMI • PHASE %d"%phase,1.5)
         if st>90:e.n.velocity=Vector3.ZERO
         elif dist>2.6:
-            var q=to.normalized();var enr=e.boss and float(e.n.get_meta("hp"))<425;var elite=bool(e.n.get_meta("elite"));var speed=3.8 if enr else (3.0 if e.boss else (2.8 if elite else 2.0))
+            var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var enr=e.boss and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var speed=3.8 if enr else (3.0 if e.boss else (2.8 if elite else 2.0))
             e.n.velocity.x=q.x*speed;e.n.velocity.z=q.z*speed;e.n.look_at(e.n.position+q,Vector3.UP)
         else:
             e.n.velocity.x=move_toward(e.n.velocity.x,0,d*12);e.n.velocity.z=move_toward(e.n.velocity.z,0,d*12);e.a-=d
             if e.a<=0 and parry_t<=0:
-                e.a=.55 if e.boss and float(e.n.get_meta("hp"))<425 else (1.0 if e.boss else 1.55);take_damage(22 if e.boss else 9)
+                var phase_now=int(e.n.get_meta("phase",1))
+                e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else 1.55
+                var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else 9
+                impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else .55,Color("#ff4f86") if e.boss else Color("#9c79ff"))
+                take_damage(attack_damage)
         e.n.move_and_slide();e.n.position.y=0
 
 func take_damage(a):
@@ -527,8 +544,10 @@ func update_ui():
     for e in enemies:
         if e.boss and is_instance_valid(e.n):boss_hp=int(e.n.get_meta("hp"))
     info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d  WAVE %d" %[level,hp,stamina,mana,combo,souls,xp,level*250,wave]
-    if boss_hp>0:info.text+="
-TSUKUYOMI  %d / 850"%boss_hp
+    if boss_hp>0:
+        var phase_text="I" if boss_hp>566 else ("II" if boss_hp>283 else "III")
+        info.text+="
+TSUKUYOMI  %d  • PHASE %s"%(boss_hp,phase_text)
     skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d"%[blade,magic_power,mobility,skill_points,defeated]
 
 func gain_xp(a):
