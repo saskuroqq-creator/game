@@ -38,6 +38,9 @@ var world_time=0.0
 var look_input=Vector2.ZERO
 var camera_yaw=0.0
 var camera_pitch=12.0
+var wave=1
+var wave_timer=4.0
+var defeated=0
 
 func _ready():
     call_deferred("_start_alpha")
@@ -345,7 +348,7 @@ func damage_enemy(e,dmg,dir,launch=false):
     e.n.set_meta("hp",float(e.n.get_meta("hp"))-dmg);e.n.set_meta("stagger",float(e.n.get_meta("stagger",0))+dmg*.65)
     e.n.velocity+=dir*(7 if launch else 3);e.n.velocity.y=3.5 if launch else 1.2;hitstop=.045;burst(e.n.position+Vector3.UP,Color("#ff4f86"),10)
     if float(e.n.get_meta("hp"))<=0:
-        souls+=100 if not e.boss else 1500;gain_xp(80 if not e.boss else 600)
+        souls+=100 if not e.boss else 1500;defeated+=1;gain_xp(80 if not e.boss else 600)
         if e.boss:say("TSUKUYOMI DEFEATED",5)
         e.n.queue_free();enemies.erase(e)
 
@@ -447,6 +450,9 @@ func build_ui():
     layer.add_child(look)
     var save=Button.new();save.text="SAVE";save.position=Vector2(20,440);save.size=Vector2(100,48);layer.add_child(save);save.pressed.connect(save_game)
     var load=Button.new();load.text="LOAD";load.position=Vector2(130,440);load.size=Vector2(100,48);layer.add_child(load);load.pressed.connect(load_game)
+    var up1=Button.new();up1.text="BLADE +";up1.position=Vector2(250,440);up1.size=Vector2(105,48);layer.add_child(up1);up1.pressed.connect(func():upgrade_skill(0))
+    var up2=Button.new();up2.text="MAGIC +";up2.position=Vector2(365,440);up2.size=Vector2(105,48);layer.add_child(up2);up2.pressed.connect(func():upgrade_skill(1))
+    var up3=Button.new();up3.text="MOBILITY +";up3.position=Vector2(480,440);up3.size=Vector2(115,48);layer.add_child(up3);up3.pressed.connect(func():upgrade_skill(2))
     var pause=Button.new();pause.text="Ⅱ";pause.position=Vector2(1190,25);pause.size=Vector2(65,55);layer.add_child(pause);pause.pressed.connect(toggle_pause)
     banner=Label.new();banner.position=Vector2(0,235);banner.size=Vector2(1280,80);banner.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;banner.add_theme_font_size_override("font_size",32);banner.add_theme_color_override("font_color",Color("#f0c878"));layer.add_child(banner)
 
@@ -461,15 +467,31 @@ func mobile(a):
     elif a=="parry":parry()
     elif a.begins_with("m") and attack_t<=0:magic(int(a.substr(1)))
 
+func upgrade_skill(kind):
+    if skill_points<=0:
+        say("NO SKILL POINTS",1.0)
+        return
+    skill_points-=1
+    if kind==0:
+        blade+=1
+        say("BLADE MASTERY %d"%blade,1.0)
+    elif kind==1:
+        magic_power+=1
+        say("ONMYO MASTERY %d"%magic_power,1.0)
+    else:
+        mobility+=1
+        stamina=minf(100,stamina+15)
+        say("SHADOW STEP %d"%mobility,1.0)
+
 func update_ui():
     hpbar.value=hp;stbar.value=stamina;mpbar.value=mana
     var boss_hp=0
     for e in enemies:
         if e.boss and is_instance_valid(e.n):boss_hp=int(e.n.get_meta("hp"))
-    info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d" %[level,hp,stamina,mana,combo,souls,xp,level*250]
+    info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d  WAVE %d" %[level,hp,stamina,mana,combo,souls,xp,level*250,wave]
     if boss_hp>0:info.text+="
 TSUKUYOMI  %d / 850"%boss_hp
-    skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d"%[blade,magic_power,mobility,skill_points]
+    skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d"%[blade,magic_power,mobility,skill_points,defeated]
 
 func gain_xp(a):
     xp+=a
