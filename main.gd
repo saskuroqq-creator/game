@@ -44,6 +44,7 @@ var wave=1
 var wave_timer=4.0
 var defeated=0
 var boss_phase_announced:Dictionary={}
+var map_zone="MOONLIT VILLAGE"
 
 func _ready():
     call_deferred("_start_alpha")
@@ -59,6 +60,10 @@ func _start_alpha():
     await get_tree().process_frame
     for i in range(10): spawn_enemy(Vector3(-24+(i%5)*12,0,-14+(i/5)*18),i%4==0)
     spawn_enemy(Vector3(0,0,-34),true)
+    build_open_world_zones()
+    spawn_enemy(Vector3(-62,0,-58),false,"ONI GUARDIAN")
+    spawn_enemy(Vector3(64,0,-48),false,"KITSUNE WARDEN")
+    spawn_enemy(Vector3(58,0,58),false,"MOURNING SAMURAI")
 
 func _process(d):
     world_time+=d
@@ -107,10 +112,10 @@ func build_world():
     var moon_light=OmniLight3D.new();moon_light.position=moon_mesh.position;moon_light.light_color=Color("#b85a7c");moon_light.light_energy=3.2;moon_light.omni_range=34;add_child(moon_light)
     var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
     var moon=DirectionalLight3D.new();moon.rotation_degrees=Vector3(-48,145,0);moon.light_color=Color("#8e7ad6");moon.light_energy=.42;moon.shadow_enabled=true;add_child(moon)
-    var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(100,1,100);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
-    var cs=CollisionShape3D.new();var bs=BoxShape3D.new();bs.size=Vector3(100,1,100);cs.shape=bs;ground.add_child(cs);add_child(ground)
-    for i in range(36):
-        var a=TAU*i/36.0;var r=26+sin(i*2.1)*5;pillar(Vector3(cos(a)*r,0,sin(a)*r),3+float(i%5)*.7)
+    var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(240,1,240);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
+    var cs=CollisionShape3D.new();var bs=BoxShape3D.new();bs.size=Vector3(240,1,240);cs.shape=bs;ground.add_child(cs);add_child(ground)
+    for i in range(72):
+        var a=TAU*i/72.0;var r=54+sin(i*2.1)*8;pillar(Vector3(cos(a)*r,0,sin(a)*r),3+float(i%5)*.7)
     for i in range(14):
         var a=TAU*i/14.0;lantern(Vector3(cos(a)*13,0,sin(a)*13))
     for z in [-5.0,-18.0,-31.0]: gate(z)
@@ -122,6 +127,20 @@ func build_world():
     for z in [-9.0,-25.0,-39.0]: stone_arch(Vector3(-27,0,z),1.0)
     for i in range(24): grave_cluster(Vector3(-30+fmod(i*11.7,60),0,-36+fmod(i*17.1,68)),i%3==0)
 
+
+func build_open_world_zones():
+    world_zone("MOONLIT VILLAGE",Vector3(0,0,22),Color("#8e7ad6"),14)
+    world_zone("WISTERIA FOREST",Vector3(-62,0,-58),Color("#6fa889"),18)
+    world_zone("KITSUNE VALLEY",Vector3(64,0,-48),Color("#d48a5b"),17)
+    world_zone("ASHEN BATTLEFIELD",Vector3(58,0,58),Color("#b85a62"),19)
+    world_zone("YOMI GATE",Vector3(0,0,-92),Color("#9c79ff"),22)
+
+func world_zone(label:String,p:Vector3,c:Color,radius:float):
+    var root=Node3D.new();root.position=p;add_child(root)
+    var shrine=MeshInstance3D.new();var sm=CylinderMesh.new();sm.top_radius=1.2;sm.bottom_radius=1.6;sm.height=2.2;shrine.mesh=sm;shrine.position.y=1.1;shrine.material_override=make_mat(c,.7,.8);root.add_child(shrine)
+    var ring=MeshInstance3D.new();var tm=TorusMesh.new();tm.inner_radius=radius*.72;tm.outer_radius=radius*.75;ring.mesh=tm;ring.position.y=.05;ring.material_override=make_mat(c,.9,.18);root.add_child(ring)
+    var lamp=OmniLight3D.new();lamp.position=Vector3(0,3,0);lamp.light_color=c;lamp.light_energy=1.8;lamp.omni_range=radius*.8;root.add_child(lamp)
+    var tag=Label3D.new();tag.text=label;tag.position=Vector3(0,4.2,0);tag.font_size=30;tag.modulate=c;tag.outline_size=8;root.add_child(tag)
 
 func cathedral_ruin(p:Vector3):
     var root=Node3D.new();root.position=p;add_child(root)
@@ -427,23 +446,26 @@ func tick_enemy_shots(d):
         elif q.t<=0:
             q.n.queue_free();enemy_shots.erase(q)
 
-func spawn_enemy(p,boss=false):
+func spawn_enemy(p,boss=false,mini_kind=""):
     var n=CharacterBody3D.new();n.position=p;add_child(n)
     var cs=CollisionShape3D.new();var s=CapsuleShape3D.new();s.radius=.5 if not boss else .72;s.height=1.8 if not boss else 2.5;cs.shape=s;cs.position.y=s.height*.5;n.add_child(cs)
     var v=human_visual(true)
     if v:v.scale*=1.08 if boss else .98;n.add_child(v)
-    var elite=not boss and randf()<.25
+    var mini=mini_kind!="";var elite=(not boss and randf()<.25) or mini
     var base_hp=140.0+float(wave-1)*18.0
     if elite:base_hp*=1.65
-    n.set_meta("hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("max_hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite);n.set_meta("phase",1)
-    n.set_meta("type","boss" if boss else (["duelist","hunter","brute"][randi()%3] if wave>=3 else "duelist"))
+    if mini:base_hp=620.0+float(wave)*35.0
+    var max_hp=(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp
+    n.set_meta("hp",max_hp);n.set_meta("max_hp",max_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite);n.set_meta("phase",1);n.set_meta("mini",mini);n.set_meta("mini_name",mini_kind)
+    n.set_meta("type","boss" if boss else (mini_kind if mini else (["duelist","hunter","brute"][randi()%3] if wave>=3 else "duelist")))
+    if mini:n.scale=Vector3(1.22,1.22,1.22);say("%s HAS AWAKENED"%mini_kind,2.0)
     enemies.append({"n":n,"boss":boss,"a":randf_range(.4,1.5)})
 
 func tick_enemies(d):
     for e in enemies.duplicate():
         if not is_instance_valid(e.n):enemies.erase(e);continue
         var to=player.position-e.n.position;to.y=0;var dist=to.length();var st=maxf(0,float(e.n.get_meta("stagger"))-d*45);e.n.set_meta("stagger",st)
-        if e.boss:
+        if e.boss or bool(e.n.get_meta("mini",false)):
             var max_hp=float(e.n.get_meta("max_hp"))
             var ratio=float(e.n.get_meta("hp"))/max_hp
             var phase=1 if ratio>.66 else (2 if ratio>.33 else 3)
@@ -457,7 +479,7 @@ func tick_enemies(d):
                 say("TSUKUYOMI • PHASE %d"%phase,1.5)
         if st>90:e.n.velocity=Vector3.ZERO
         elif dist>2.6:
-            var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var enr=e.boss and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var enemy_type=str(e.n.get_meta("type","duelist"));var speed=3.8 if enr else (4.4 if enemy_type=="duelist" else (2.2 if enemy_type=="brute" else 2.6))
+            var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var special=e.boss or bool(e.n.get_meta("mini",false));var enr=special and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var enemy_type=str(e.n.get_meta("type","duelist"));var speed=3.8 if enr else (4.4 if enemy_type=="duelist" else (2.2 if enemy_type=="brute" else 2.6))
             e.n.velocity.x=q.x*speed;e.n.velocity.z=q.z*speed;e.n.look_at(e.n.position+q,Vector3.UP)
         else:
             e.n.velocity.x=move_toward(e.n.velocity.x,0,d*12);e.n.velocity.z=move_toward(e.n.velocity.z,0,d*12);e.a-=d
@@ -471,7 +493,7 @@ func tick_enemies(d):
                     impact_ring(e.n.position+Vector3.UP*.15,.72,Color("#ff8b6b"));burst(bolt.position,Color("#ffb18d"),5)
                 else:
                     e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else (1.1 if enemy_type=="brute" else 1.55)
-                    var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else (14 if enemy_type=="brute" else 9)
+                    var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else ((25 if phase_now==3 else (20 if phase_now==2 else 16)) if bool(e.n.get_meta("mini",false)) else (14 if enemy_type=="brute" else 9))
                     impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else (.72 if enemy_type=="brute" else .55),Color("#ff4f86") if e.boss else (Color("#ff704d") if enemy_type=="brute" else Color("#9c79ff")))
                     take_damage(attack_damage)
         e.n.move_and_slide();e.n.position.y=0
