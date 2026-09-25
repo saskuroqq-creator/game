@@ -1,0 +1,81 @@
+name: Build YOKAI Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepare project
+        run: |
+          set -e
+          mkdir -p project
+          ARCHIVE="$(find . -maxdepth 1 -type f -iname 'YOKAI_Shadow_of_Izanami_TSUYOMI_1.8.0.zip' -print -quit)"
+          test -n "$ARCHIVE"
+          unzip -q "$ARCHIVE" -d project
+          PROJECT_DIR="$(find project -name project.godot -type f -print -quit | xargs -r dirname)"
+          test -n "$PROJECT_DIR"
+          if [ -d "$PROJECT_DIR/scripts" ]; then
+            find "$PROJECT_DIR/scripts" -type f -name '*.gd' -exec sed -i 's/:=/=/g' {} +
+          fi
+          if grep -q '^\[rendering\]$' "$PROJECT_DIR/project.godot"; then
+            grep -q '^textures/vram_compression/import_etc2_astc=' "$PROJECT_DIR/project.godot" || sed -i '/^\[rendering\]$/a textures/vram_compression/import_etc2_astc=true' "$PROJECT_DIR/project.godot"
+          else
+            printf '\n[rendering]\ntextures/vram_compression/import_etc2_astc=true\n' >> "$PROJECT_DIR/project.godot"
+          fi
+          rm -rf "$PROJECT_DIR/.godot/imported"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: >
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+
+      - name: Create debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=YOKAI,C=UZ" -keyalg RSA -keysize 2048 -validity 10000
+
+      - name: Export APK
+        uses: firebelley/godot-export@v8.0.0
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /home/runner/.android/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz
+          relative_project_path: ${{ env.PROJECT_DIR }}
+          presets_to_export: Android
+          export_debug: true
+          cache: true
+
+      - name: Collect APK
+        run: |
+          set -e
+          mkdir -p release
+          APK="$HOME/.local/share/godot/builds/Android/YOKAIShadowsOfIzanami.apk"
+          test -f "$APK"
+          cp "$APK" release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk
+          sha256sum release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk > release/YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-debug.apk.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YOKAI-Shadows-of-Izanami-Tsuyomi-1.8.0-Android
+          path: release/*
+          if-no-files-found: error
+          retention-days: 30
