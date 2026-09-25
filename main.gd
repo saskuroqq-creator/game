@@ -98,11 +98,13 @@ func make_mat(c:Color,r=.5,e=0.0):
 
 func build_world():
     var env=WorldEnvironment.new();var e=Environment.new()
-    e.background_mode=Environment.BG_COLOR;e.background_color=Color("#05050a")
-    e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#665174");e.ambient_light_energy=.7
-    e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=false
+    e.background_mode=Environment.BG_COLOR;e.background_color=Color("#020207")
+    e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#51416f");e.ambient_light_energy=.52
+    e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=true;e.glow_intensity=1.15;e.glow_bloom=0.08
     e.volumetric_fog_enabled=false;e.fog_enabled=true;e.fog_light_color=Color("#746b80");e.fog_density=.012;e.fog_height=.0;e.fog_height_density=.018
     env.environment=e;add_child(env)
+    var moon_mesh=MeshInstance3D.new();var moon_sphere=SphereMesh.new();moon_sphere.radius=4.6;moon_sphere.height=9.2;moon_mesh.mesh=moon_sphere;moon_mesh.position=Vector3(-10,16,-48);moon_mesh.material_override=make_mat(Color("#b34b6a"),.22,2.6);add_child(moon_mesh)
+    var moon_light=OmniLight3D.new();moon_light.position=moon_mesh.position;moon_light.light_color=Color("#b85a7c");moon_light.light_energy=3.2;moon_light.omni_range=34;add_child(moon_light)
     var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
     var moon=DirectionalLight3D.new();moon.rotation_degrees=Vector3(-48,145,0);moon.light_color=Color("#8e7ad6");moon.light_energy=.42;moon.shadow_enabled=true;add_child(moon)
     var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(100,1,100);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
@@ -169,7 +171,8 @@ func build_player():
     var v=human_visual(false)
     if v:player.add_child(v)
     weapon=katana();player.add_child(weapon)
-    camera=Camera3D.new();camera.fov=55;camera.current=true;camera.position=Vector3(0,5.6,9.2);add_child(camera)
+    camera=Camera3D.new();camera.fov=52;camera.current=true;camera.position=Vector3(0,4.9,7.4);add_child(camera)
+    var rim=OmniLight3D.new();rim.position=Vector3(0,2.0,0.5);rim.light_color=Color("#8f6cff");rim.light_energy=1.35;rim.omni_range=6.5;player.add_child(rim)
 
 func human_visual(enemy):
     # Always build a visible fallback body first. External GLB assets are optional enhancements,
@@ -290,6 +293,12 @@ func human_visual(enemy):
         shoulder.material_override=armor2
         root.add_child(shoulder)
 
+    var coat_tail=MeshInstance3D.new();var ctm=BoxMesh.new();ctm.size=Vector3(.78,1.05,.16)*scale_factor;coat_tail.mesh=ctm;coat_tail.position=Vector3(0,.83*scale_factor,.30*scale_factor);coat_tail.rotation_degrees.x=-8;coat_tail.material_override=make_mat(Color("#09080e"),1);root.add_child(coat_tail)
+    var sash=MeshInstance3D.new();var sm2=BoxMesh.new();sm2.size=Vector3(.76,.12,.40)*scale_factor;sash.mesh=sm2;sash.position=Vector3(0,1.00*scale_factor,-.06);sash.material_override=make_mat(Color("#5a193c"),.58,1.0);root.add_child(sash)
+    var mask=MeshInstance3D.new();var mm=SphereMesh.new();mm.radius=.18*scale_factor;mm.height=.24*scale_factor;mask.mesh=mm;mask.position=Vector3(0,1.84*scale_factor,-.205*scale_factor);mask.scale=Vector3(1.35,.72,.38);mask.material_override=make_mat(Color("#221822"),.38,.7);root.add_child(mask)
+    if not enemy:
+        for side in [-1.0,1.0]:
+            var horn=MeshInstance3D.new();var hm2=CylinderMesh.new();hm2.top_radius=.015;hm2.bottom_radius=.055;hm2.height=.34;horn.mesh=hm2;horn.position=Vector3(side*.12,2.22*scale_factor,.01);horn.rotation_degrees.z=side*22;horn.material_override=make_mat(Color("#b28a5b"),.3,.35);root.add_child(horn)
     if enemy:
         for x in root.find_children("*","MeshInstance3D",true,false):
             var mi=x as MeshInstance3D
@@ -338,9 +347,11 @@ func human_visual(enemy):
 
 func katana():
     var r=Node3D.new();r.position=Vector3(.62,1,-.05);r.rotation_degrees=Vector3(5,-8,-28)
-    var b=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(.075,1.45,.14);b.mesh=bm;b.position.y=.7;b.material_override=make_mat(Color("#e8eef7"),.12,.2);r.add_child(b)
-    var g=MeshInstance3D.new();var gm=TorusMesh.new();gm.inner_radius=.17;gm.outer_radius=.23;g.mesh=gm;g.rotation_degrees.x=90;g.material_override=make_mat(Color("#d7a84d"),.28);r.add_child(g)
-    var h=MeshInstance3D.new();var cm=CylinderMesh.new();cm.height=.62;cm.top_radius=.11;cm.bottom_radius=.11;h.mesh=cm;h.position.y=-.28;h.material_override=make_mat(Color("#15151a"),.7);r.add_child(h);return r
+    var b=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(.055,1.62,.11);b.mesh=bm;b.position.y=.81;b.material_override=make_mat(Color("#f2f3ff"),.08,1.15);r.add_child(b)
+    var edge=MeshInstance3D.new();var em=BoxMesh.new();em.size=Vector3(.018,1.48,.025);edge.mesh=em;edge.position=Vector3(.03,.82,-.065);edge.material_override=make_mat(Color("#bca5ff"),.05,3.0);r.add_child(edge)
+    var g=MeshInstance3D.new();var gm=TorusMesh.new();gm.inner_radius=.17;gm.outer_radius=.235;g.mesh=gm;g.rotation_degrees.x=90;g.material_override=make_mat(Color("#d7a84d"),.22,.45);r.add_child(g)
+    var h=MeshInstance3D.new();var cm=CylinderMesh.new();cm.height=.66;cm.top_radius=.105;cm.bottom_radius=.105;h.mesh=cm;h.position.y=-.30;h.material_override=make_mat(Color("#101016"),.62);r.add_child(h)
+    var pom=MeshInstance3D.new();var pm=SphereMesh.new();pm.radius=.10;pm.height=.20;pom.mesh=pm;pom.position.y=-.64;pom.material_override=make_mat(Color("#7c4a6c"),.25,.7);r.add_child(pom);return r
 
 func move_player(d):
     if paused:return
@@ -452,14 +463,16 @@ func tick_enemies(d):
             e.n.velocity.x=move_toward(e.n.velocity.x,0,d*12);e.n.velocity.z=move_toward(e.n.velocity.z,0,d*12);e.a-=d
             if e.a<=0 and parry_t<=0:
                 var phase_now=int(e.n.get_meta("phase",1))
-                e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else 1.55
-                var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else 9
-                if not e.boss and str(e.n.get_meta("type","duelist"))=="hunter" and dist>4.0:
-                    var bolt=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.12;sm.height=.24;bolt.mesh=sm;bolt.position=e.n.position+Vector3.UP*1.25;bolt.material_override=make_mat(Color("#ff8b6b"),.08,3.0);add_child(bolt)
+                var enemy_type=str(e.n.get_meta("type","duelist"))
+                if not e.boss and enemy_type=="hunter" and dist>4.0:
+                    e.a=1.35
+                    var bolt=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.12;sm.height=.24;bolt.mesh=sm;bolt.position=e.n.position+Vector3.UP*1.35;bolt.material_override=make_mat(Color("#ff8b6b"),.06,4.0);add_child(bolt)
                     enemy_shots.append({"n":bolt,"v":to.normalized()*12.0,"t":2.0,"d":13.0})
-                    impact_ring(e.n.position+Vector3.UP*.1,.7,Color("#ff8b6b"))
+                    impact_ring(e.n.position+Vector3.UP*.15,.72,Color("#ff8b6b"));burst(bolt.position,Color("#ffb18d"),5)
                 else:
-                    impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else .55,Color("#ff4f86") if e.boss else Color("#9c79ff"))
+                    e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else (1.1 if enemy_type=="brute" else 1.55)
+                    var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else (14 if enemy_type=="brute" else 9)
+                    impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else (.72 if enemy_type=="brute" else .55),Color("#ff4f86") if e.boss else (Color("#ff704d") if enemy_type=="brute" else Color("#9c79ff")))
                     take_damage(attack_damage)
         e.n.move_and_slide();e.n.position.y=0
 
@@ -492,7 +505,7 @@ func tick_camera(d):
         camera_yaw-=lx*d*2.6
         camera_pitch=clampf(camera_pitch+ly*d*70.0,-8.0,42.0)
     var rot=Basis(Vector3.UP,camera_yaw)*Basis(Vector3.RIGHT,deg_to_rad(camera_pitch))
-    var offset=rot*Vector3(0,0,9.2)
+    var offset=rot*Vector3(0,0,7.4)
     if camera_shake>0:
         camera_shake=maxf(0,camera_shake-d)
         offset+=Vector3(randf_range(-1,1),randf_range(-.7,.7),randf_range(-1,1))*camera_shake*2.5
@@ -561,7 +574,10 @@ func update_ui():
         if e.boss and is_instance_valid(e.n):boss_hp=int(e.n.get_meta("hp"))
     info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d  WAVE %d" %[level,hp,stamina,mana,combo,souls,xp,level*250,wave]
     if boss_hp>0:
-        var phase_text="I" if boss_hp>566 else ("II" if boss_hp>283 else "III")
+        var boss_max=850
+        for e in enemies:
+            if e.boss and is_instance_valid(e.n):boss_max=int(e.n.get_meta("max_hp"))
+        var phase_text="I" if boss_hp>boss_max*.66 else ("II" if boss_hp>boss_max*.33 else "III")
         info.text+="
 TSUKUYOMI  %d  • PHASE %s"%(boss_hp,phase_text)
     skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d"%[blade,magic_power,mobility,skill_points,defeated]
