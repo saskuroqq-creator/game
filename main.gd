@@ -40,12 +40,19 @@ var camera_yaw=0.0
 var camera_pitch=12.0
 
 func _ready():
+    call_deferred("_start_alpha")
+
+func _start_alpha():
+    say("YOKAI ALPHA 0.1",3)
+    await get_tree().process_frame
     build_world()
+    await get_tree().process_frame
     build_player()
+    await get_tree().process_frame
     build_ui()
+    await get_tree().process_frame
     for i in range(10): spawn_enemy(Vector3(-24+(i%5)*12,0,-14+(i/5)*18),i%4==0)
     spawn_enemy(Vector3(0,0,-34),true)
-    say("THE GATE OF TSUKUYOMI",3)
 
 func _process(d):
     world_time+=d
@@ -66,21 +73,21 @@ func build_world():
     var env=WorldEnvironment.new();var e=Environment.new()
     e.background_mode=Environment.BG_COLOR;e.background_color=Color("#05050a")
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#665174");e.ambient_light_energy=.7
-    e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=true;e.glow_intensity=1.2
+    e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=false
     e.volumetric_fog_enabled=false;e.fog_enabled=true;e.fog_light_color=Color("#746b80");e.fog_density=.012;e.fog_height=.0;e.fog_height_density=.018
     env.environment=e;add_child(env)
     var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
-    var moon=OmniLight3D.new();moon.position=Vector3(0,12,0);moon.omni_range=65;moon.light_color=Color("#725de2");moon.light_energy=9;add_child(moon)
+    var moon=DirectionalLight3D.new();moon.rotation_degrees=Vector3(-48,145,0);moon.light_color=Color("#8e7ad6");moon.light_energy=.42;moon.shadow_enabled=true;add_child(moon)
     var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(100,1,100);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
     var cs=CollisionShape3D.new();var bs=BoxShape3D.new();bs.size=Vector3(100,1,100);cs.shape=bs;ground.add_child(cs);add_child(ground)
     for i in range(36):
         var a=TAU*i/36.0;var r=26+sin(i*2.1)*5;pillar(Vector3(cos(a)*r,0,sin(a)*r),3+float(i%5)*.7)
-    for i in range(20):
-        var a=TAU*i/20.0;lantern(Vector3(cos(a)*13,0,sin(a)*13))
+    for i in range(14):
+        var a=TAU*i/14.0;lantern(Vector3(cos(a)*13,0,sin(a)*13))
     for z in [-5.0,-18.0,-31.0]: gate(z)
     for i in range(20): tree(Vector3(-35+(i%10)*7,0,-39+(i/10)*8))
     for i in range(42): rock(Vector3(-42+fmod(i*17.3,84),0,-42+fmod(i*31.7,84)),0.5+fmod(i*1.7,1.8))
-    for i in range(28): shrine_prop(Vector3(-40+fmod(i*23.1,80),0,-38+fmod(i*13.7,76)))
+    for i in range(20): shrine_prop(Vector3(-40+fmod(i*23.1,80),0,-38+fmod(i*13.7,76)))
     cathedral_ruin(Vector3(0,0,-40))
     cathedral_ruin(Vector3(29,0,-18))
     for z in [-9.0,-25.0,-39.0]: stone_arch(Vector3(-27,0,z),1.0)
@@ -109,7 +116,7 @@ func grave_cluster(p:Vector3,large:bool):
 
 func lantern(p):
     var n=MeshInstance3D.new();var m=CylinderMesh.new();m.top_radius=.3;m.bottom_radius=.42;m.height=1.5;n.mesh=m;n.position=p+Vector3.UP*.75;n.material_override=make_mat(Color("#3c252e"),.75);add_child(n)
-    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.5;l.light_color=Color("#ff9d5c");l.light_energy=3.5;l.omni_range=7;add_child(l)
+    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.5;l.light_color=Color("#ff9d5c");l.light_energy=2.2;l.omni_range=5;add_child(l)
 
 func tree(p):
     var n=Node3D.new();n.position=p;add_child(n)
@@ -122,7 +129,7 @@ func rock(p:Vector3,s:float):
 
 func shrine_prop(p:Vector3):
     var n=MeshInstance3D.new();var b=BoxMesh.new();b.size=Vector3(1.4,.35,1.4);n.mesh=b;n.position=p+Vector3.UP*.18;n.material_override=make_mat(Color("#3b3027"),.9);add_child(n)
-    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.1;l.light_color=Color("#d98755");l.light_energy=.7;l.omni_range=3;add_child(l)
+    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.1;l.light_color=Color("#d98755");l.light_energy=.45;l.omni_range=2.5;add_child(l)
 
 func gate(z):
     for x in [-6.0,6.0]:
