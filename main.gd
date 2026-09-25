@@ -38,6 +38,7 @@ var world_time=0.0
 var look_input=Vector2.ZERO
 var camera_yaw=0.0
 var camera_pitch=12.0
+var camera_shake=0.0
 var wave=1
 var wave_timer=4.0
 var defeated=0
@@ -353,7 +354,7 @@ func move_player(d):
     player.move_and_slide();player.position.x=clampf(player.position.x,-44,44);player.position.z=clampf(player.position.z,-44,44)
 
 func dash():
-    stamina-=20;dash_t=.5;invuln_t=.38;player.velocity+=-player.global_transform.basis.z*(18+mobility*1.5);burst(player.position+Vector3.UP,Color("#9c79ff"),18)
+    stamina-=20;dash_t=.5;invuln_t=.38;player.velocity+=-player.global_transform.basis.z*(18+mobility*1.5);camera_shake=.18;burst(player.position+Vector3.UP,Color("#9c79ff"),18);dash_trail()
 
 func melee(heavy):
     var finisher=combo>=4 and combo_t>0;attack_t=.62 if heavy or finisher else .26;combo+=1;combo_t=1.05
@@ -367,21 +368,31 @@ func melee(heavy):
 
 func damage_enemy(e,dmg,dir,launch=false):
     e.n.set_meta("hp",float(e.n.get_meta("hp"))-dmg);e.n.set_meta("stagger",float(e.n.get_meta("stagger",0))+dmg*.65)
-    e.n.velocity+=dir*(7 if launch else 3);e.n.velocity.y=3.5 if launch else 1.2;hitstop=.045;burst(e.n.position+Vector3.UP,Color("#ff4f86"),10)
+    e.n.velocity+=dir*(7 if launch else 3);e.n.velocity.y=3.5 if launch else 1.2;hitstop=.055 if launch else .035;camera_shake=.16 if launch else .08;burst(e.n.position+Vector3.UP,Color("#ff4f86") if not launch else Color("#ffe8f4"),14 if launch else 9);impact_ring(e.n.position+Vector3.UP*.8,1.0 if launch else .65,Color("#ff5d91") if not launch else Color("#fff0fa"))
     if float(e.n.get_meta("hp"))<=0:
         souls+=100 if not e.boss else 1500;defeated+=1;gain_xp(80 if not e.boss else 600)
         if e.boss:say("TSUKUYOMI DEFEATED",5)
         e.n.queue_free();enemies.erase(e)
 
 func slash(heavy,finisher=false):
-    var n=MeshInstance3D.new();var t=TorusMesh.new();t.inner_radius=2.5 if heavy else 1.5;t.outer_radius=2.62 if heavy else 1.63;n.mesh=t;n.position=player.position+Vector3.UP*.95;n.rotation_degrees.x=90;n.material_override=make_mat(Color("#ffe0ef") if finisher else (Color("#ffb7d5") if heavy else Color("#8f72ff")),.08,1.4);add_child(n);fx.append({"n":n,"t":.28,"v":Vector3.ZERO})
+    var c=Color("#ffe0ef") if finisher else (Color("#ffb7d5") if heavy else Color("#8f72ff"))
+    var n=MeshInstance3D.new();var t=TorusMesh.new();t.inner_radius=2.5 if heavy or finisher else 1.5;t.outer_radius=2.62 if heavy or finisher else 1.63;n.mesh=t;n.position=player.position+Vector3.UP*.95;n.rotation_degrees=Vector3(90,-18 if combo%2==0 else 18,0);n.material_override=make_mat(c,.08,2.2);add_child(n);fx.append({"n":n,"t":.22 if heavy else .16,"v":Vector3.ZERO})
+    var n2=MeshInstance3D.new();var t2=TorusMesh.new();t2.inner_radius=1.0 if finisher else .72;t2.outer_radius=1.06 if finisher else .78;n2.mesh=t2;n2.position=n.position+Vector3.UP*.08;n2.rotation_degrees=Vector3(90,35,0);n2.material_override=make_mat(Color.WHITE,.06,2.8);add_child(n2);fx.append({"n":n2,"t":.14,"v":Vector3.ZERO})
+    burst(player.position+Vector3.UP*1.0,c,6 if not finisher else 14)
+    camera_shake=.12 if heavy else .07
+
+func impact_ring(p:Vector3,radius:float,c:Color):
+    var n=MeshInstance3D.new();var t=TorusMesh.new();t.inner_radius=radius;t.outer_radius=radius+.07;n.mesh=t;n.position=p;n.rotation_degrees.x=90;n.material_override=make_mat(c,.08,2.8);add_child(n);fx.append({"n":n,"t":.24,"v":Vector3.ZERO})
+
+func dash_trail():
+    var n=MeshInstance3D.new();var t=TorusMesh.new();t.inner_radius=.38;t.outer_radius=.46;n.mesh=t;n.position=player.position+Vector3.UP*.85;n.rotation_degrees.x=90;n.material_override=make_mat(Color("#9c79ff"),.08,2.4);add_child(n);fx.append({"n":n,"t":.32,"v":Vector3(0,.15,0)})
 
 func magic(school):
     if attack_t>0 or mana<18:return
     mana-=18;attack_t=.45;combo=max(combo,1);combo_t=1.4
     var c=Color("#a98cff") if school==0 else (Color("#ff6a3d") if school==1 else Color("#2c183c"))
     var n=MeshInstance3D.new();var s=SphereMesh.new();s.radius=.24;s.height=.48;n.mesh=s;n.position=player.position+Vector3.UP*1.2-player.global_transform.basis.z*1.3;n.material_override=make_mat(c,.08,2.5);add_child(n)
-    shots.append({"n":n,"v":-player.global_transform.basis.z*20.0,"t":2.2,"d":70+magic_power*18,"school":school});burst(n.position,c,12)
+    shots.append({"n":n,"v":-player.global_transform.basis.z*20.0,"t":2.2,"d":70+magic_power*18,"school":school});burst(n.position,c,12);impact_ring(n.position,.42,c);camera_shake=.05
     say(["MOON ART • LUNAR LANCE","FIRE ART • KAGUTSUCHI","VOID ART • YOMI RIFT"][school],.9)
 
 func tick_shots(d):
@@ -449,6 +460,9 @@ func tick_camera(d):
         camera_pitch=clampf(camera_pitch+ly*d*70.0,-8.0,42.0)
     var rot=Basis(Vector3.UP,camera_yaw)*Basis(Vector3.RIGHT,deg_to_rad(camera_pitch))
     var offset=rot*Vector3(0,0,9.2)
+    if camera_shake>0:
+        camera_shake=maxf(0,camera_shake-d)
+        offset+=Vector3(randf_range(-1,1),randf_range(-.7,.7),randf_range(-1,1))*camera_shake*2.5
     camera.position=camera.position.lerp(target+offset,1-exp(-d*8))
     camera.look_at(target,Vector3.UP)
 
