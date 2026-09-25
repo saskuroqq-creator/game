@@ -407,7 +407,16 @@ func tick_fx(d):
         if f.t<=0:f.n.queue_free();fx.erase(f)
 
 func tick_camera(d):
-    var target=player.position+Vector3.UP;camera.position=camera.position.lerp(target+Vector3(0,5.6,9.2),1-exp(-d*7));camera.look_at(target,Vector3.UP)
+    var target=player.position+Vector3.UP*1.15
+    var lx=Input.get_axis("ui_home","ui_end")
+    var ly=Input.get_axis("ui_page_up","ui_page_down")
+    if abs(lx)+abs(ly)>.05:
+        camera_yaw-=lx*d*2.6
+        camera_pitch=clampf(camera_pitch+ly*d*70.0,-8.0,42.0)
+    var rot=Basis(Vector3.UP,camera_yaw)*Basis(Vector3.RIGHT,deg_to_rad(camera_pitch))
+    var offset=rot*Vector3(0,0,9.2)
+    camera.position=camera.position.lerp(target+offset,1-exp(-d*8))
+    camera.look_at(target,Vector3.UP)
 
 func build_ui():
     var layer=CanvasLayer.new();add_child(layer)
