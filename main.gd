@@ -415,6 +415,7 @@ func spawn_enemy(p,boss=false):
     var base_hp=140.0+float(wave-1)*18.0
     if elite:base_hp*=1.65
     n.set_meta("hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("max_hp",(850.0+float(maxi(0,wave-1))*120.0) if boss else base_hp);n.set_meta("stagger",0.0);n.set_meta("elite",elite);n.set_meta("phase",1)
+    n.set_meta("type","boss" if boss else (["duelist","hunter","brute"][randi()%3] if wave>=3 else "duelist"))
     enemies.append({"n":n,"boss":boss,"a":randf_range(.4,1.5)})
 
 func tick_enemies(d):
@@ -435,7 +436,7 @@ func tick_enemies(d):
                 say("TSUKUYOMI • PHASE %d"%phase,1.5)
         if st>90:e.n.velocity=Vector3.ZERO
         elif dist>2.6:
-            var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var enr=e.boss and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var speed=3.8 if enr else (3.0 if e.boss else (2.8 if elite else 2.0))
+            var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var enr=e.boss and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var enemy_type=str(e.n.get_meta("type","duelist"));var speed=3.8 if enr else (4.4 if enemy_type=="duelist" else (2.2 if enemy_type=="brute" else 2.6))
             e.n.velocity.x=q.x*speed;e.n.velocity.z=q.z*speed;e.n.look_at(e.n.position+q,Vector3.UP)
         else:
             e.n.velocity.x=move_toward(e.n.velocity.x,0,d*12);e.n.velocity.z=move_toward(e.n.velocity.z,0,d*12);e.a-=d
