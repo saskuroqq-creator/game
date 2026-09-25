@@ -113,20 +113,162 @@ func build_player():
     camera=Camera3D.new();camera.fov=55;camera.current=true;camera.position=Vector3(0,5.6,9.2);add_child(camera)
 
 func human_visual(enemy):
-    if not ResourceLoader.exists(BODY):return null
-    var root=Node3D.new();root.name="PhotorealHumanoid"
-    root.add_child(load(BODY).instantiate())
-    if ResourceLoader.exists(HEAD):
-        var h=load(HEAD).instantiate();h.position=Vector3(0,1.68,0);root.add_child(h)
-    if ResourceLoader.exists(HAIR):
-        var h=load(HAIR).instantiate();h.position=Vector3(0,1.7,0);root.add_child(h)
+    # Always build a visible fallback body first. External GLB assets are optional enhancements,
+    # so a missing/broken submodule can never make the player or enemies invisible.
+    var root=Node3D.new()
+    root.name="HumanoidVisual"
+    root.position=Vector3(0,0,0)
+
+    var skin=make_mat(Color("#b98268"),.72)
+    var skin_dark=make_mat(Color("#744536"),.78)
+    var cloth=make_mat(Color("#17151b"),.92)
+    var cloth2=make_mat(Color("#29222e"),.82)
+    var armor=make_mat(Color("#34313a"),.48)
+    var armor2=make_mat(Color("#5a3c35"),.4)
+    var metal=make_mat(Color("#9b9aa4"),.2,.08)
+    var eye=make_mat(Color("#c59aff"),.12,4.0)
+
+    var scale_factor=1.08 if enemy else 1.0
+
+    var torso=MeshInstance3D.new()
+    var torso_mesh=CapsuleMesh.new()
+    torso_mesh.radius=.34*scale_factor
+    torso_mesh.height=.82*scale_factor
+    torso.mesh=torso_mesh
+    torso.position=Vector3(0,1.17*scale_factor,0)
+    torso.material_override=cloth
+    root.add_child(torso)
+
+    var chest=MeshInstance3D.new()
+    var chest_mesh=BoxMesh.new()
+    chest_mesh.size=Vector3(.66,.55,.30)*scale_factor
+    chest.mesh=chest_mesh
+    chest.position=Vector3(0,1.30*scale_factor,-.04)
+    chest.material_override=armor
+    root.add_child(chest)
+
+    var pelvis=MeshInstance3D.new()
+    var pelvis_mesh=BoxMesh.new()
+    pelvis_mesh.size=Vector3(.55,.34,.28)*scale_factor
+    pelvis.mesh=pelvis_mesh
+    pelvis.position=Vector3(0,.78*scale_factor,0)
+    pelvis.material_override=cloth2
+    root.add_child(pelvis)
+
+    var head=MeshInstance3D.new()
+    var head_mesh=SphereMesh.new()
+    head_mesh.radius=.245*scale_factor
+    head_mesh.height=.49*scale_factor
+    head.mesh=head_mesh
+    head.position=Vector3(0,1.83*scale_factor,0)
+    head.material_override=skin
+    root.add_child(head)
+
+    var hair=MeshInstance3D.new()
+    var hair_mesh=SphereMesh.new()
+    hair_mesh.radius=.265*scale_factor
+    hair_mesh.height=.40*scale_factor
+    hair.mesh=hair_mesh
+    hair.position=Vector3(0,1.98*scale_factor,.01)
+    hair.scale=Vector3(1.02,.72,1.02)
+    hair.material_override=make_mat(Color("#101015"),.72)
+    root.add_child(hair)
+
+    for side in [-1.0,1.0]:
+        var arm=MeshInstance3D.new()
+        var arm_mesh=CylinderMesh.new()
+        arm_mesh.top_radius=.105*scale_factor
+        arm_mesh.bottom_radius=.125*scale_factor
+        arm_mesh.height=.68*scale_factor
+        arm.mesh=arm_mesh
+        arm.position=Vector3(side*.48*scale_factor,1.17*scale_factor,0)
+        arm.rotation_degrees.z=side*8.0
+        arm.material_override=cloth2
+        root.add_child(arm)
+
+        var hand=MeshInstance3D.new()
+        var hand_mesh=SphereMesh.new()
+        hand_mesh.radius=.12*scale_factor
+        hand_mesh.height=.20*scale_factor
+        hand.mesh=hand_mesh
+        hand.position=Vector3(side*.53*scale_factor,.78*scale_factor,0)
+        hand.material_override=skin_dark
+        root.add_child(hand)
+
+        var leg=MeshInstance3D.new()
+        var leg_mesh=CylinderMesh.new()
+        leg_mesh.top_radius=.13*scale_factor
+        leg_mesh.bottom_radius=.105*scale_factor
+        leg_mesh.height=.72*scale_factor
+        leg.mesh=leg_mesh
+        leg.position=Vector3(side*.18*scale_factor,.38*scale_factor,0)
+        leg.material_override=cloth
+        root.add_child(leg)
+
+        var boot=MeshInstance3D.new()
+        var boot_mesh=BoxMesh.new()
+        boot_mesh.size=Vector3(.23,.18,.42)*scale_factor
+        boot.mesh=boot_mesh
+        boot.position=Vector3(side*.18*scale_factor,.10*scale_factor,-.07)
+        boot.material_override=armor
+        root.add_child(boot)
+
+    # A simple layered samurai cuirass and shoulder guards keeps the fallback readable at gameplay distance.
+    for side in [-1.0,1.0]:
+        var shoulder=MeshInstance3D.new()
+        var sm=SphereMesh.new()
+        sm.radius=.17*scale_factor
+        sm.height=.22*scale_factor
+        shoulder.mesh=sm
+        shoulder.position=Vector3(side*.43*scale_factor,1.50*scale_factor,0)
+        shoulder.scale=Vector3(1.15,.65,1.0)
+        shoulder.material_override=armor2
+        root.add_child(shoulder)
+
     if enemy:
-        root.scale*=.98
         for x in root.find_children("*","MeshInstance3D",true,false):
             var mi=x as MeshInstance3D
-            var a=mi.get_active_material(0)
-            if a is StandardMaterial3D:
-                var q=a.duplicate();q.albedo_color=q.albedo_color.lerp(Color("#541b2b"),.35);mi.material_override=q
+            if mi and mi.material_override is StandardMaterial3D:
+                var q=(mi.material_override as StandardMaterial3D).duplicate()
+                q.albedo_color=q.albedo_color.lerp(Color("#541b2b"),.24)
+                mi.material_override=q
+        # Eyes/visor glow makes enemy silhouettes readable in fog and darkness.
+        for side in [-1.0,1.0]:
+            var eye_mesh=MeshInstance3D.new()
+            var em=SphereMesh.new()
+            em.radius=.028*scale_factor
+            em.height=.056*scale_factor
+            eye_mesh.mesh=em
+            eye_mesh.position=Vector3(side*.085*scale_factor,1.85*scale_factor,-.225*scale_factor)
+            eye_mesh.material_override=eye
+            root.add_child(eye_mesh)
+
+    # Try the photoreal Vitruvian assets as an optional layer. If they are absent, malformed,
+    # or not imported in an Android build, the procedural humanoid above remains visible.
+    if ResourceLoader.exists(BODY):
+        var body_scene=load(BODY) as PackedScene
+        if body_scene:
+            var body=body_scene.instantiate()
+            if body:
+                body.name="VitruvianBody"
+                root.add_child(body)
+    if ResourceLoader.exists(HEAD):
+        var head_scene=load(HEAD) as PackedScene
+        if head_scene:
+            var h=head_scene.instantiate()
+            if h:
+                h.name="VitruvianHead"
+                h.position=Vector3(0,1.68,0)
+                root.add_child(h)
+    if ResourceLoader.exists(HAIR):
+        var hair_scene=load(HAIR) as PackedScene
+        if hair_scene:
+            var h=hair_scene.instantiate()
+            if h:
+                h.name="VitruvianHair"
+                h.position=Vector3(0,1.70,0)
+                root.add_child(h)
+
     return root
 
 func katana():
