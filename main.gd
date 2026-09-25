@@ -34,7 +34,10 @@ var info:Label
 var banner:Label
 var skills:Label
 var weapon:Node3D
-var world_time=0.0\nvar look_input=Vector2.ZERO\nvar camera_yaw=0.0\nvar camera_pitch=12.0
+var world_time=0.0
+var look_input=Vector2.ZERO
+var camera_yaw=0.0
+var camera_pitch=12.0
 
 func _ready():
     build_world()
@@ -420,7 +423,8 @@ func update_ui():
     for e in enemies:
         if e.boss and is_instance_valid(e.n):boss_hp=int(e.n.get_meta("hp"))
     info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d" %[level,hp,stamina,mana,combo,souls,xp,level*250]
-    if boss_hp>0:info.text+="\nTSUKUYOMI  %d / 850"%boss_hp
+    if boss_hp>0:info.text+="
+TSUKUYOMI  %d / 850"%boss_hp
     skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d"%[blade,magic_power,mobility,skill_points]
 
 func gain_xp(a):
