@@ -8,7 +8,7 @@ height = 720
 high_dpi = 1
 
 [bootstrap]
-main_collection = /main.collectionc
+main_collection = /game.collectionc
 
 [render]
 clear_color = 0.015 0.012 0.025 1
