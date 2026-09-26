@@ -1,2 +1,2 @@
 Defold gameplay alpha 2
-Lua syntax normalized.
+All inserted Lua multiline blocks normalized.
