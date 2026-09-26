@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Input bindings added.
+All GUI text now uses ui.font.
