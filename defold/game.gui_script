@@ -232,7 +232,8 @@ local function update_hud()
 	text("mp_text","MP "..math.floor(player.mp).."/100")
 	text("souls_text","SOULS "..player.souls.."   LV "..player.level)
 	local q={"COLLECT 3 SOUL CACHES","PURGE 10 YOKAI","DEFEAT ONI GUARDIAN","REACH YOMI GATE","YOMI GATE COMPLETE"}
-	text("quest",q[quest_stage+1] or q[5])\n\ttext("zone_text", player.y>560 and "ASHEN BATTLEFIELD" or (player.x<420 and "WISTERIA FOREST" or (player.x>850 and "KITSUNE VALLEY" or "MOONLIT VILLAGE")))
+	text("quest",q[quest_stage+1] or q[5])
+	text("zone_text", player.y>560 and "ASHEN BATTLEFIELD" or (player.x<420 and "WISTERIA FOREST" or (player.x>850 and "KITSUNE VALLEY" or "MOONLIT VILLAGE")))
 	gui.set_position(node("player"),vmath.vector3(player.x,player.y,0))
 end
 
@@ -276,7 +277,11 @@ function on_input(self,action_id,action)
 			move.x=(x-150)/150; move.y=(y-620)/120
 		elseif y>550 and x>980 then
 			if x>1110 then dash() else attack() end
-		elseif y<180 and x>1080 then heavy()\n\t\telseif y>570 and x>950 then magic()\n\t\telseif y>620 and x<210 then save_game()\n\t\telseif y>620 and x<390 then shrine()\n\t\telseif y>620 and x>1050 then save_game()
+		elseif y<180 and x>1080 then heavy()
+		elseif y>570 and x>950 then magic()
+		elseif y>620 and x<210 then save_game()
+		elseif y>620 and x<390 then shrine()
+		elseif y>620 and x>1050 then save_game()
 		elseif x>1080 and y>180 and y<420 then move.y=-1
 		end
 	end
