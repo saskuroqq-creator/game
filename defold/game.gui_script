@@ -1,0 +1,263 @@
+local W, H = 1280, 720
+local state = "menu"
+local player = {x=640,y=280,hp=100,st=100,mp=100,souls=0,xp=0,level=1,blade=1,mobility=1}
+local enemies = {}
+local effects = {}
+local caches = {}
+local shrines = {}
+local quest_stage = 0
+local defeated = 0
+local wave = 1
+local attack_cd = 0
+local dash_cd = 0
+local save_t = 0
+local move = vmath.vector3(0,0,0)
+local touch_id = nil
+local touch_start = nil
+local message = ""
+local message_t = 0
+
+local function node(id) return gui.get_node(id) end
+local function hide(id) gui.set_enabled(node(id), false) end
+local function show(id) gui.set_enabled(node(id), true) end
+
+local function text(id, value)
+	gui.set_text(node(id), tostring(value))
+end
+
+local function box(id, x, y, sx, sy, color)
+	local n=node(id)
+	gui.set_position(n, vmath.vector3(x,y,0))
+	gui.set_size(n, vmath.vector3(sx,sy,0))
+	gui.set_color(n,color)
+	gui.set_enabled(n,true)
+end
+
+local function say(s, t)
+	message=s
+	message_t=t or 2
+	if gui.get_node("banner") then text("banner",s); show("banner") end
+end
+
+local function clear_dynamic()
+	for _,n in ipairs(enemies) do gui.delete_node(n.node) end
+	for _,n in ipairs(effects) do gui.delete_node(n.node) end
+	for _,n in ipairs(caches) do gui.delete_node(n.node) end
+	for _,n in ipairs(shrines) do gui.delete_node(n.node) end
+	enemies, effects, caches, shrines = {}, {}, {}, {}
+end
+
+local function make_box(x,y,sx,sy,c)
+	local n=gui.new_box_node(vmath.vector3(x,y,0),vmath.vector3(sx,sy,0))
+	gui.set_color(n,c)
+	return n
+end
+
+local function make_text(x,y,s,size,c)
+	local n=gui.new_text_node(vmath.vector3(x,y,0),s)
+	gui.set_font(n,"/builtins/fonts/system_font.font")
+	gui.set_scale(n,vmath.vector3(size/20,size/20,1))
+	gui.set_color(n,c)
+	return n
+end
+
+local function spawn_enemy(x,y,boss,name)
+	local hp = boss and 140 or 38 + wave*4
+	local e={x=x,y=y,hp=hp,maxhp=hp,boss=boss,name=name or "YOKAI",speed=boss and 45 or 55}
+	e.node=make_box(x,y,boss and 56 or 38,boss and 72 or 46,boss and vmath.vector4(0.65,0.12,0.28,1) or vmath.vector4(0.35,0.16,0.42,1))
+	table.insert(enemies,e)
+end
+
+local function build_world()
+	state="game"
+	clear_dynamic()
+	for _,id in ipairs({"title","subtitle","start","start_text","note"}) do hide(id) end
+	box("background",640,360,1280,720,vmath.vector4(0.025,0.018,0.045,1))
+	for i=1,18 do
+		local x=40+((i*83)%1200); local y=180+((i*137)%460)
+		local n=make_box(x,y,52,52,vmath.vector4(0.08,0.05,0.12,1))
+		table.insert(effects,{node=n,life=999})
+	end
+	for i=1,3 do
+		local c={x=220+i*330,y=270+(i%2)*150,taken=false}
+		c.node=make_box(c.x,c.y,42,42,vmath.vector4(0.25,0.85,0.95,1))
+		table.insert(caches,c)
+	end
+	for i=1,3 do
+		local s={x=140+i*500,y=150,t=0}
+		s.node=make_box(s.x,s.y,54,54,vmath.vector4(0.95,0.62,0.20,1))
+		table.insert(shrines,s)
+	end
+	spawn_enemy(420,330,false,"YOKAI")
+	spawn_enemy(850,360,false,"YOKAI")
+	spawn_enemy(940,520,false,"HUNTER")
+	spawn_enemy(320,500,false,"YOKAI")
+	spawn_enemy(760,250,true,"ONI GUARDIAN")
+	say("YOKAI ALPHA • READY",2)
+	show("hud")
+end
+
+local function reset_player()
+	player.x,player.y=640,280
+	player.hp,player.st,player.mp=100,100,100
+	player.souls,player.xp,player.level=0,0,1
+	player.blade,player.mobility=1,1
+	quest_stage,defeated,wave=0,0,1
+end
+
+local function start_game()
+	reset_player()
+	build_world()
+end
+
+local function save_game()
+	local data=string.format("%d,%d,%d,%d,%d,%d,%d,%d,%d",player.hp,player.st,player.mp,player.souls,player.xp,player.level,player.blade,player.mobility,quest_stage)
+	sys.save("yokai_save",data)
+	say("GAME SAVED",1.2)
+end
+
+local function load_game()
+	local data=sys.load("yokai_save")
+	if not data or not data.data then start_game(); return end
+	local a={}
+	for v in string.gmatch(data.data,"[^,]+") do table.insert(a,tonumber(v)) end
+	if #a>=9 then
+		player.hp,player.st,player.mp,player.souls,player.xp,player.level,player.blade,player.mobility,quest_stage=table.unpack(a,1,9)
+	end
+	build_world()
+	say("CONTINUE • SAVE RESTORED",2)
+end
+
+local function hit_enemy(e,damage)
+	e.hp=e.hp-damage
+	local fx=make_box(e.x,e.y,72,12,vmath.vector4(1,0.25,0.25,0.8))
+	table.insert(effects,{node=fx,life=.12})
+	if e.hp<=0 then
+		gui.delete_node(e.node)
+		player.souls=player.souls+(e.boss and 30 or 5)
+		player.xp=player.xp+(e.boss and 50 or 10)
+		defeated=defeated+1
+		if player.xp>=player.level*60 then player.xp=player.xp-player.level*60; player.level=player.level+1; say("LEVEL UP • "..player.level,2) end
+		return true
+	end
+	return false
+end
+
+local function attack()
+	if attack_cd>0 or player.st<12 then return end
+	attack_cd=.34
+	player.st=player.st-12
+	local dead=0
+	for i=#enemies,1,-1 do
+		local e=enemies[i]
+		local dx,dy=e.x-player.x,e.y-player.y
+		if dx*dx+dy*dy<125*125 then
+			if hit_enemy(e,18+player.blade*4) then table.remove(enemies,i); dead=dead+1 end
+		end
+	end
+	local slash=make_box(player.x+55,player.y,90,12,vmath.vector4(0.95,0.78,0.45,0.9))
+	table.insert(effects,{node=slash,life=.10})
+end
+
+local function heavy()
+	if attack_cd>0 or player.st<28 then return end
+	attack_cd=.65
+	player.st=player.st-28
+	for i=#enemies,1,-1 do
+		local e=enemies[i]
+		if (e.x-player.x)^2+(e.y-player.y)^2<170^2 then
+			if hit_enemy(e,42+player.blade*8) then table.remove(enemies,i) end
+		end
+	end
+end
+
+local function dash()
+	if dash_cd>0 or player.st<20 then return end
+	dash_cd=.8
+	player.st=player.st-20
+	player.x=math.max(90,math.min(1190,player.x+move.x*(150+player.mobility*25)))
+	player.y=math.max(190,math.min(650,player.y+move.y*(150+player.mobility*25)))
+end
+
+local function update_enemies(dt)
+	for i=#enemies,1,-1 do
+		local e=enemies[i]
+		local dx,dy=player.x-e.x,player.y-e.y
+		local d=math.sqrt(dx*dx+dy*dy)
+		if d>55 then e.x=e.x+dx/d*e.speed*dt; e.y=e.y+dy/d*e.speed*dt end
+		gui.set_position(e.node,vmath.vector3(e.x,e.y,0))
+		if d<52 then player.hp=player.hp-(e.boss and 9 or 4)*dt end
+	end
+end
+
+local function update_quest()
+	if quest_stage==0 and #caches>0 then
+		local got=0
+		for _,c in ipairs(caches) do
+			if not c.taken and (c.x-player.x)^2+(c.y-player.y)^2<65^2 then
+				c.taken=true; gui.set_enabled(c.node,false); player.souls=player.souls+15; got=got+1
+			end
+		end
+		local taken=0
+		for _,c in ipairs(caches) do if c.taken then taken=taken+1 end end
+		if taken>=3 then quest_stage=1; say("QUEST • PURGE 10 YOKAI",2) end
+	elseif quest_stage==1 and defeated>=10 then quest_stage=2; say("QUEST • DEFEAT THE ONI GUARDIAN",2)
+	elseif quest_stage==2 and #enemies<=3 then quest_stage=3; say("QUEST • REACH YOMI GATE",2)
+	end
+end
+
+local function update_hud()
+	text("hp_text","HP "..math.floor(player.hp).."/100")
+	text("st_text","ST "..math.floor(player.st).."/100")
+	text("mp_text","MP "..math.floor(player.mp).."/100")
+	text("souls_text","SOULS "..player.souls.."   LV "..player.level)
+	local q={"COLLECT 3 SOUL CACHES","PURGE 10 YOKAI","DEFEAT ONI GUARDIAN","REACH YOMI GATE","YOMI GATE COMPLETE"}
+	text("quest",q[quest_stage+1] or q[5])
+	gui.set_position(node("player"),vmath.vector3(player.x,player.y,0))
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	show("menu_touch")
+	hide("hud")
+	hide("banner")
+end
+
+function update(self,dt)
+	if state~="game" then return end
+	attack_cd=math.max(0,attack_cd-dt); dash_cd=math.max(0,dash_cd-dt)
+	player.st=math.min(100,player.st+22*dt); player.mp=math.min(100,player.mp+10*dt)
+	player.x=math.max(70,math.min(1210,player.x+move.x*180*dt))
+	player.y=math.max(190,math.min(650,player.y+move.y*180*dt))
+	update_enemies(dt); update_quest(); update_hud()
+	save_t=save_t+dt
+	if save_t>30 then save_t=0; save_game() end
+	if player.hp<=0 then
+		player.hp=100; player.x=640; player.y=280; say("DEFEATED • RETURNED TO SHRINE",2)
+	end
+	if message_t>0 then message_t=message_t-dt; if message_t<=0 and node("banner") then hide("banner") end end
+	for i=#effects,1,-1 do
+		local f=effects[i]; f.life=f.life-dt
+		if f.life<=0 then gui.delete_node(f.node); table.remove(effects,i) end
+	end
+end
+
+function on_input(self,action_id,action)
+	if action.released then
+		move.x=0; move.y=0; touch_id=nil
+	end
+	if action.pressed then
+		local x,y=action.x or 0, action.y or 0
+		if state=="menu" then
+			if x>460 and x<820 and y>315 and y<410 then start_game() end
+			return
+		end
+		if y>550 and x<300 then
+			move.x=(x-150)/150; move.y=(y-620)/120
+		elseif y>550 and x>980 then
+			if x>1110 then dash() else attack() end
+		elseif y<180 and x>1080 then heavy()
+		elseif x>1080 and y>180 and y<420 then move.y=-1
+		end
+	end
+end
