@@ -20,6 +20,8 @@ local message_t = 0
 local function node(id) return gui.get_node(id) end
 local function hide(id) gui.set_enabled(node(id), false) end
 local function show(id) gui.set_enabled(node(id), true) end
+local HUD={"player","hud","hp_text","st_text","mp_text","souls_text","quest","banner","attack_btn","attack_text","dash_btn","dash_text","move_pad","move_text","heavy_btn","heavy_text"}
+local function set_hud(v) for _,id in ipairs(HUD) do gui.set_enabled(node(id),v) end end
 
 local function text(id, value)
 	gui.set_text(node(id), tostring(value))
@@ -94,7 +96,7 @@ local function build_world()
 	spawn_enemy(320,500,false,"YOKAI")
 	spawn_enemy(760,250,true,"ONI GUARDIAN")
 	say("YOKAI ALPHA • READY",2)
-	show("hud")
+	set_hud(true)
 end
 
 local function reset_player()
@@ -219,7 +221,7 @@ end
 function init(self)
 	msg.post(".", "acquire_input_focus")
 	show("menu_touch")
-	hide("hud")
+	set_hud(false)
 	hide("banner")
 end
 
