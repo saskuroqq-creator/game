@@ -45,6 +45,8 @@ var wave_timer=4.0
 var defeated=0
 var boss_phase_announced:Dictionary={}
 var map_zone="MOONLIT VILLAGE"
+var zone_hint=""
+var discovered_zones:Dictionary={"MOONLIT VILLAGE":true}
 
 func _ready():
     call_deferred("_start_alpha")
@@ -94,7 +96,7 @@ func _process(d):
             elif wave%5==0:
                 say("YOMI WAVE %d"%wave,1.5)
     if combo_t<=0:combo=0
-    move_player(d); tick_enemies(d); tick_shots(d); tick_enemy_shots(d); tick_fx(d); tick_camera(d); update_ui()
+    move_player(d); tick_enemies(d); tick_shots(d); tick_enemy_shots(d); tick_fx(d); tick_camera(d); update_zone(); update_ui()
 
 func make_mat(c:Color,r=.5,e=0.0):
     var m=StandardMaterial3D.new();m.albedo_color=c;m.roughness=r
@@ -616,12 +618,32 @@ func upgrade_skill(kind):
         stamina=minf(100,stamina+15)
         say("SHADOW STEP %d"%mobility,1.0)
 
+func update_zone():
+    if not player:return
+    var p=player.position
+    var best="MOONLIT VILLAGE"
+    var best_dist=999999.0
+    var zones={"MOONLIT VILLAGE":Vector3(0,0,22),"WISTERIA FOREST":Vector3(-62,0,-58),"KITSUNE VALLEY":Vector3(64,0,-48),"ASHEN BATTLEFIELD":Vector3(58,0,58),"YOMI GATE":Vector3(0,0,-92)}
+    for name in zones:
+        var dist=p.distance_to(zones[name])
+        if dist<best_dist:
+            best_dist=dist;best=name
+    if best_dist>28.0:best="MOONLIT VILLAGE"
+    if best!=map_zone:
+        map_zone=best
+        if not discovered_zones.has(best):
+            discovered_zones[best]=true
+            say("REGION DISCOVERED • %s"%best,2.4)
+        else:
+            say(best,1.0)
+    zone_hint="%s  •  %dm TO HEART"%[map_zone,int(best_dist)]
+
 func update_ui():
     hpbar.value=hp;stbar.value=stamina;mpbar.value=mana
     var boss_hp=0
     for e in enemies:
         if e.boss and is_instance_valid(e.n):boss_hp=int(e.n.get_meta("hp"))
-    info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d  WAVE %d" %[level,hp,stamina,mana,combo,souls,xp,level*250,wave]
+    info.text="LV %d  HP %d  ST %d  MP %d  COMBO x%d  SOULS %d  XP %d/%d  WAVE %d\n%s" %[level,hp,stamina,mana,combo,souls,xp,level*250,wave,zone_hint]
     if boss_hp>0:
         var boss_max=850
         for e in enemies:
