@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-All GUI text now uses ui.font.
+GUI font cleanup complete.
