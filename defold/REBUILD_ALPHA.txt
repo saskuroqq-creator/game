@@ -1,1 +1,2 @@
 YOKAI Defold rebuild alpha 1
+CI trigger after build fix
