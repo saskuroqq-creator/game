@@ -1,4 +1,4 @@
-extends Node3D
+extends Node
 
 const BODY="res://third_party/vitruvian/godot_project/vitruvian_body.glb"
 const HEAD="res://third_party/vitruvian/godot_project/vitruvian_head.glb"
@@ -56,7 +56,57 @@ var shrine_nodes:Array[Node3D]=[]
 var shrine_cooldown=0.0
 
 func _ready():
-    call_deferred("_start_alpha")
+    build_main_menu()
+
+func build_main_menu():
+    var layer=CanvasLayer.new()
+    add_child(layer)
+    var bg=ColorRect.new()
+    bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    bg.color=Color("#05030a")
+    layer.add_child(bg)
+
+    var title=Label.new()
+    title.text="YOKAI"
+    title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    title.set_anchors_preset(Control.PRESET_CENTER_TOP)
+    title.position=Vector2(-360,90)
+    title.size=Vector2(720,90)
+    title.add_theme_font_size_override("font_size",64)
+    title.add_theme_color_override("font_color",Color("#e8c77d"))
+    layer.add_child(title)
+
+    var subtitle=Label.new()
+    subtitle.text="SHADOW OF IZANAMI"
+    subtitle.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    subtitle.set_anchors_preset(Control.PRESET_CENTER_TOP)
+    subtitle.position=Vector2(-360,175)
+    subtitle.size=Vector2(720,50)
+    subtitle.add_theme_font_size_override("font_size",24)
+    subtitle.add_theme_color_override("font_color",Color("#b9a8d8"))
+    layer.add_child(subtitle)
+
+    var start=Button.new()
+    start.text="START GAME"
+    start.set_anchors_preset(Control.PRESET_CENTER)
+    start.position=Vector2(-170,15)
+    start.size=Vector2(340,72)
+    start.add_theme_font_size_override("font_size",26)
+    layer.add_child(start)
+    start.pressed.connect(func():
+        layer.queue_free()
+        _start_alpha()
+    )
+
+    var note=Label.new()
+    note.text="ANDROID ALPHA • SAFE START"
+    note.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+    note.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+    note.position=Vector2(-300,-85)
+    note.size=Vector2(600,40)
+    note.add_theme_font_size_override("font_size",14)
+    note.add_theme_color_override("font_color",Color("#756b82"))
+    layer.add_child(note)
 
 func _start_alpha():
     # Safe boot: keep the first frame lightweight and postpone all heavy world work.
@@ -706,16 +756,13 @@ func build_ui():
     var specs=[["ATK",Vector2(940,580),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"],["MOON",Vector2(930,500),"m0"],["FIRE",Vector2(1030,455),"m1"],["VOID",Vector2(1130,455),"m2"],["PARRY",Vector2(790,610),"parry"],["SHRINE",Vector2(670,610),"shrine"]]
     for a in specs:
         var b=Button.new();b.text=a[0];b.position=a[1];b.size=Vector2(120,55);layer.add_child(b);b.pressed.connect(func():mobile(a[2]))
-    var joy=VirtualJoystick.new()
-    joy.name="MovementJoystick";joy.position=Vector2(34,500);joy.size=Vector2(210,210)
-    joy.joystick_size=185;joy.tip_size=82;joy.deadzone_ratio=.12;joy.joystick_mode=VirtualJoystick.JOYSTICK_FIXED
-    joy.action_up=&"ui_up";joy.action_down=&"ui_down";joy.action_left=&"ui_left";joy.action_right=&"ui_right"
-    layer.add_child(joy)
-    var look=VirtualJoystick.new()
-    look.name="CameraJoystick";look.position=Vector2(1030,500);look.size=Vector2(210,210)
-    look.joystick_size=185;look.tip_size=82;look.deadzone_ratio=.14;look.joystick_mode=VirtualJoystick.JOYSTICK_FIXED
-    look.action_up=&"ui_page_up";look.action_down=&"ui_page_down";look.action_left=&"ui_home";look.action_right=&"ui_end"
-    layer.add_child(look)
+    # Native Godot buttons only: no third-party joystick dependency is required.
+    hold_button(layer,"▲",Vector2(150,470),Vector2(90,70),Vector2(0,-1))
+    hold_button(layer,"▼",Vector2(150,630),Vector2(90,70),Vector2(0,1))
+    hold_button(layer,"◀",Vector2(55,550),Vector2(90,70),Vector2(-1,0))
+    hold_button(layer,"▶",Vector2(245,550),Vector2(90,70),Vector2(1,0))
+    hold_button(layer,"CAM ◀",Vector2(880,650),Vector2(110,55),Vector2(-1,0),true)
+    hold_button(layer,"CAM ▶",Vector2(1130,650),Vector2(110,55),Vector2(1,0),true)
     var save=Button.new();save.text="SAVE";save.position=Vector2(20,440);save.size=Vector2(100,48);layer.add_child(save);save.pressed.connect(save_game)
     var load=Button.new();load.text="LOAD";load.position=Vector2(130,440);load.size=Vector2(100,48);layer.add_child(load);load.pressed.connect(load_game)
     var up1=Button.new();up1.text="BLADE +";up1.position=Vector2(250,440);up1.size=Vector2(105,48);layer.add_child(up1);up1.pressed.connect(func():upgrade_skill(0))
@@ -723,6 +770,20 @@ func build_ui():
     var up3=Button.new();up3.text="MOBILITY +";up3.position=Vector2(480,440);up3.size=Vector2(115,48);layer.add_child(up3);up3.pressed.connect(func():upgrade_skill(2))
     var pause=Button.new();pause.text="Ⅱ";pause.position=Vector2(1190,25);pause.size=Vector2(65,55);layer.add_child(pause);pause.pressed.connect(toggle_pause)
     banner=Label.new();banner.position=Vector2(0,235);banner.size=Vector2(1280,80);banner.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;banner.add_theme_font_size_override("font_size",32);banner.add_theme_color_override("font_color",Color("#f0c878"));layer.add_child(banner)
+
+func hold_button(layer,text_value,pos,size,dir,camera_button=false):
+    var b=Button.new()
+    b.text=text_value
+    b.position=pos
+    b.size=size
+    b.modulate=Color(1,1,1,.82)
+    layer.add_child(b)
+    if camera_button:
+        b.button_down.connect(func(): Input.action_press("ui_home" if dir.x<0 else "ui_end"))
+        b.button_up.connect(func(): Input.action_release("ui_home" if dir.x<0 else "ui_end"))
+    else:
+        b.button_down.connect(func(): virtual_dir=dir)
+        b.button_up.connect(func(): if virtual_dir==dir: virtual_dir=Vector2.ZERO)
 
 func bar(layer,pos,c):
     var b=ProgressBar.new();b.position=pos;b.size=Vector2(400,14);b.max_value=100;b.show_percentage=false
