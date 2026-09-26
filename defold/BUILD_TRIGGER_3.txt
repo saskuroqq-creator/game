@@ -1,2 +1,2 @@
 Defold gameplay alpha 2
-All inserted Lua multiline blocks normalized.
+Lua cleanup complete.
