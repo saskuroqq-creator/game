@@ -3,9 +3,6 @@ fonts {
  name: "ui"
  font: "/ui.font"
 }
-textures {
- name: "none"
-}
 material: "/builtins/materials/gui.material"
 nodes {
  type: TYPE_BOX
