@@ -1,6 +1,6 @@
 [application]
 config/name="YOKAI: Shadow of Izanami"
-config/version="0.2.0-alpha.2"
+config/version="0.2.0-alpha.3"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
