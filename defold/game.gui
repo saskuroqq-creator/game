@@ -154,3 +154,13 @@ nodes { type: TYPE_BOX id: "move_pad" position { x: 145.0 y: 155.0 } size { x: 2
 nodes { type: TYPE_TEXT id: "move_text" position { x: 145.0 y: 155.0 } size { x: 220.0 y: 70.0 } text: "MOVE" font: "ui" color { x: 0.75 y: 0.7 z: 0.9 w: 1.0 } }
 nodes { type: TYPE_BOX id: "heavy_btn" position { x: 1110.0 y: 500.0 } size { x: 180.0 y: 80.0 } color { x: 0.35 y: 0.18 z: 0.08 w: 0.9 } }
 nodes { type: TYPE_TEXT id: "heavy_text" position { x: 1110.0 y: 500.0 } size { x: 180.0 y: 60.0 } text: "HEAVY" font: "ui" color { x: 1.0 y: 0.8 z: 0.45 w: 1.0 } }
+
+nodes { type: TYPE_BOX id: "magic_btn" position { x: 1030.0 y: 610.0 } size { x: 150.0 y: 65.0 } color { x: 0.22 y: 0.12 z: 0.38 w: 0.9 } }
+nodes { type: TYPE_TEXT id: "magic_text" position { x: 1030.0 y: 610.0 } size { x: 150.0 y: 55.0 } text: "MAGIC" font: "ui" color { x: 0.75 y: 0.6 z: 1.0 w: 1.0 } }
+nodes { type: TYPE_BOX id: "save_btn" position { x: 120.0 y: 650.0 } size { x: 150.0 y: 55.0 } color { x: 0.12 y: 0.22 z: 0.16 w: 0.9 } }
+nodes { type: TYPE_TEXT id: "save_text" position { x: 120.0 y: 650.0 } size { x: 150.0 y: 45.0 } text: "SAVE" font: "ui" color { x: 0.55 y: 1.0 z: 0.65 w: 1.0 } }
+nodes { type: TYPE_BOX id: "shrine_btn" position { x: 300.0 y: 650.0 } size { x: 150.0 y: 55.0 } color { x: 0.28 y: 0.17 z: 0.08 w: 0.9 } }
+nodes { type: TYPE_TEXT id: "shrine_text" position { x: 300.0 y: 650.0 } size { x: 150.0 y: 45.0 } text: "SHRINE" font: "ui" color { x: 1.0 y: 0.75 z: 0.4 w: 1.0 } }
+nodes { type: TYPE_BOX id: "pause_btn" position { x: 1150.0 y: 650.0 } size { x: 150.0 y: 55.0 } color { x: 0.18 y: 0.18 z: 0.22 w: 0.9 } }
+nodes { type: TYPE_TEXT id: "pause_text" position { x: 1150.0 y: 650.0 } size { x: 150.0 y: 45.0 } text: "PAUSE" font: "ui" color { x: 0.85 y: 0.85 z: 0.9 w: 1.0 } }
+nodes { type: TYPE_TEXT id: "zone_text" position { x: 640.0 y: 590.0 } size { x: 700.0 y: 35.0 } text: "MOONLIT VILLAGE" font: "ui" color { x: 0.55 y: 0.48 z: 0.68 w: 1.0 } }
