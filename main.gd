@@ -47,6 +47,8 @@ var boss_phase_announced:Dictionary={}
 var map_zone="MOONLIT VILLAGE"
 var zone_hint=""
 var discovered_zones:Dictionary={"MOONLIT VILLAGE":true}
+var soul_caches:Array[Dictionary]=[]
+var caches_collected=0
 
 func _ready():
     call_deferred("_start_alpha")
@@ -63,6 +65,7 @@ func _start_alpha():
     for i in range(10): spawn_enemy(Vector3(-24+(i%5)*12,0,-14+(i/5)*18),i%4==0)
     spawn_enemy(Vector3(0,0,-34),true)
     build_open_world_zones()
+    build_soul_caches()
     spawn_enemy(Vector3(-62,0,-58),false,"ONI GUARDIAN")
     spawn_enemy(Vector3(64,0,-48),false,"KITSUNE WARDEN")
     spawn_enemy(Vector3(58,0,58),false,"MOURNING SAMURAI")
@@ -75,6 +78,7 @@ func _process(d):
     parry_t=maxf(0,parry_t-d); invuln_t=maxf(0,invuln_t-d)
     stamina=minf(100,stamina+d*(20+mobility*3)); mana=minf(100,mana+d*(5+magic_power*1.5))
     wave_timer-=d
+    tick_soul_caches()
     if wave_timer<=0 and not paused:
         wave_timer=5.5
         var living=0
@@ -144,6 +148,27 @@ func build_region_geometry():
     stone_arch(Vector3(0,0,-78),1.35)
     stone_arch(Vector3(36,0,-48),1.25)
     stone_arch(Vector3(42,0,58),1.3)
+
+func build_soul_caches():
+    var points=[Vector3(-38,0,-48),Vector3(-78,0,-70),Vector3(-48,0,-42),Vector3(48,0,-62),Vector3(78,0,-34),Vector3(46,0,46),Vector3(72,0,72),Vector3(-18,0,-86)]
+    for i in range(points.size()):
+        var p=points[i]
+        var root=Node3D.new();root.position=p;root.name="SoulCache_%d"%i;add_child(root)
+        var base=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(1.15,.42,.9);base.mesh=bm;base.position.y=.22;base.material_override=make_mat(Color("#211b2c"),.72);root.add_child(base)
+        var orb=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.25;sm.height=.5;orb.mesh=sm;orb.position.y=.82;orb.material_override=make_mat(Color("#a98cff"),.08,4.0);root.add_child(orb)
+        var light=OmniLight3D.new();light.position=Vector3(0,1,.0);light.light_color=Color("#9c79ff");light.light_energy=1.5;light.omni_range=3.5;root.add_child(light)
+        soul_caches.append({"n":root,"value":180+i*40,"taken":false})
+
+func tick_soul_caches():
+    if not player:return
+    for cache in soul_caches:
+        if bool(cache.taken) or not is_instance_valid(cache.n):continue
+        if player.position.distance_to(cache.n.position)<2.2:
+            cache.taken=true;souls+=int(cache.value);caches_collected+=1
+            burst(cache.n.position+Vector3.UP,Color("#c9b7ff"),16)
+            impact_ring(cache.n.position+Vector3.UP*.2,1.0,Color("#a98cff"))
+            say("SOUL CACHE +%d"%int(cache.value),1.2)
+            cache.n.visible=false
 
 func build_open_world_zones():
     world_zone("MOONLIT VILLAGE",Vector3(0,0,22),Color("#8e7ad6"),14)
@@ -651,7 +676,7 @@ func update_ui():
         var phase_text="I" if boss_hp>boss_max*.66 else ("II" if boss_hp>boss_max*.33 else "III")
         info.text+="
 TSUKUYOMI  %d  • PHASE %s"%(boss_hp,phase_text)
-    skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d"%[blade,magic_power,mobility,skill_points,defeated]
+    skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d  CACHES %d/8"%[blade,magic_power,mobility,skill_points,defeated,caches_collected]
 
 func gain_xp(a):
     xp+=a
