@@ -1,0 +1,133 @@
+script: "/game.gui_script"
+fonts {
+ name: "system"
+ font: "/builtins/fonts/system_font.font"
+}
+textures {
+ name: "none"
+}
+material: "/builtins/materials/gui.material"
+nodes {
+ type: box
+ id: "background"
+ x: 640.0
+ y: 360.0
+ size {
+  x: 1280.0
+  y: 720.0
+ }
+ color {
+  x: 0.015
+  y: 0.012
+  z: 0.025
+  w: 1.0
+ }
+}
+nodes {
+ type: text
+ id: "title"
+ position {
+  x: 640.0
+  y: 535.0
+ }
+ size {
+  x: 900.0
+  y: 100.0
+ }
+ text: "YOKAI"
+ font: "system"
+ color {
+  x: 0.91
+  y: 0.78
+  z: 0.40
+  w: 1.0
+ }
+ scale {
+  x: 3.0
+  y: 3.0
+  z: 1.0
+ }
+}
+nodes {
+ type: text
+ id: "subtitle"
+ position {
+  x: 640.0
+  y: 475.0
+ }
+ size {
+  x: 900.0
+  y: 60.0
+ }
+ text: "SHADOW OF IZANAMI"
+ font: "system"
+ color {
+  x: 0.72
+  y: 0.66
+  z: 0.85
+  w: 1.0
+ }
+}
+nodes {
+ type: box
+ id: "start"
+ position {
+  x: 640.0
+  y: 350.0
+ }
+ size {
+  x: 360.0
+  y: 90.0
+ }
+ color {
+  x: 0.14
+  y: 0.09
+  z: 0.20
+  w: 1.0
+ }
+}
+nodes {
+ type: text
+ id: "start_text"
+ position {
+  x: 640.0
+  y: 350.0
+ }
+ size {
+  x: 360.0
+  y: 70.0
+ }
+ text: "START GAME"
+ font: "system"
+ color {
+  x: 1.0
+  y: 0.9
+  z: 0.65
+  w: 1.0
+ }
+ scale {
+  x: 1.5
+  y: 1.5
+  z: 1.0
+ }
+}
+nodes {
+ type: text
+ id: "note"
+ position {
+  x: 640.0
+  y: 120.0
+ }
+ size {
+  x: 900.0
+  y: 40.0
+ }
+ text: "ANDROID ALPHA • DEFOLD MOBILE"
+ font: "system"
+ color {
+  x: 0.42
+  y: 0.38
+  z: 0.50
+  w: 1.0
+ }
+}
