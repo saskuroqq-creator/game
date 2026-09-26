@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Bundled built-in UI font.
+GUI resources normalized.
