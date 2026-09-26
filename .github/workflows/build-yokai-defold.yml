@@ -1,0 +1,30 @@
+name: Build YOKAI Defold Android
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "defold/**"
+      - ".github/workflows/build-yokai-defold.yml"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - name: Download Bob
+        run: |
+          mkdir -p .bob
+          curl -fL -o .bob/bob.jar https://github.com/defold/defold/releases/latest/download/bob.jar
+      - name: Build Android APK
+        run: |
+          java -jar .bob/bob.jar --root defold --platform arm64-android --variant release --bundle-format apk --archive --bundle-output release-defold bundle
+      - name: Publish APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: YOKAI-Defold-Android
+          path: release-defold/*.apk
+          if-no-files-found: error
+          retention-days: 30
