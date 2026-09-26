@@ -96,8 +96,21 @@ func build_main_menu():
     layer.add_child(start)
     start.pressed.connect(func():
         layer.queue_free()
-        _start_alpha()
+        _start_alpha(false)
     )
+
+    if FileAccess.file_exists("user://yokai_save.json"):
+        var cont=Button.new()
+        cont.text="CONTINUE"
+        cont.set_anchors_preset(Control.PRESET_CENTER)
+        cont.position=Vector2(-170,105)
+        cont.size=Vector2(340,62)
+        cont.add_theme_font_size_override("font_size",22)
+        layer.add_child(cont)
+        cont.pressed.connect(func():
+            layer.queue_free()
+            _start_alpha(true)
+        )
 
     var note=Label.new()
     note.text="ANDROID ALPHA • SAFE START"
@@ -109,7 +122,7 @@ func build_main_menu():
     note.add_theme_color_override("font_color",Color("#756b82"))
     layer.add_child(note)
 
-func _start_alpha():
+func _start_alpha(load_saved=false):
     # Safe boot: keep the first frame lightweight and postpone all heavy world work.
     build_ui()
     say("YOKAI • SAFE BOOT",2.0)
@@ -118,9 +131,9 @@ func _start_alpha():
     await get_tree().process_frame
     build_player()
     await get_tree().process_frame
-    call_deferred("_finish_alpha_boot")
+    call_deferred("_finish_alpha_boot",load_saved)
 
-func _finish_alpha_boot():
+func _finish_alpha_boot(load_saved=false):
     await get_tree().process_frame
     build_world_decorations()
     await get_tree().process_frame
@@ -139,7 +152,9 @@ func _finish_alpha_boot():
     spawn_enemy(Vector3(64,0,-48),false,"KITSUNE WARDEN")
     await get_tree().process_frame
     spawn_enemy(Vector3(58,0,58),false,"MOURNING SAMURAI")
-    say("YOKAI ALPHA 0.2 • READY",2.0)
+    if load_saved:
+        load_game()
+    say("YOKAI ALPHA 0.4 • READY",2.0)
 
 func _process(d):
     world_time+=d
@@ -147,6 +162,10 @@ func _process(d):
     if not player:return
     attack_t=maxf(0,attack_t-d); dash_t=maxf(0,dash_t-d); combo_t=maxf(0,combo_t-d)
     parry_t=maxf(0,parry_t-d); invuln_t=maxf(0,invuln_t-d)
+    if paused:
+        tick_camera(d)
+        update_ui()
+        return
     stamina=minf(100,stamina+d*(20+mobility*3)); mana=minf(100,mana+d*(5+magic_power*1.5))
     wave_timer-=d
     autosave_t-=d
@@ -884,6 +903,10 @@ func load_game():
 func toggle_pause():
     paused=!paused
     if banner:banner.text="PAUSED" if paused else ""
+
+func _notification(what):
+    if what==NOTIFICATION_APPLICATION_FOCUS_OUT and player:
+        save_game(true)
 
 func say(t,sec):
     if banner:banner.text=t;get_tree().create_timer(sec).timeout.connect(func():if is_instance_valid(banner):banner.text="")
