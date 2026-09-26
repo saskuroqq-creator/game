@@ -57,7 +57,7 @@ end
 
 local function make_text(x,y,s,size,c)
 	local n=gui.new_text_node(vmath.vector3(x,y,0),s)
-	gui.set_font(n,"/builtins/fonts/system_font.font")
+	gui.set_font(n,"ui")
 	gui.set_scale(n,vmath.vector3(size/20,size/20,1))
 	gui.set_color(n,c)
 	return n
