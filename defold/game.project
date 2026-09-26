@@ -1,19 +1,18 @@
 [project]
 title = YOKAI: Shadow of Izanami
 version = 0.1.0-alpha.1
+
 [display]
 width = 1280
 height = 720
 high_dpi = 1
-[display.device]
-width = 1280
-height = 720
+
 [bootstrap]
 main_collection = /main.collectionc
+
 [render]
 clear_color = 0.015 0.012 0.025 1
+
 [android]
 package = com.yokai.shadowofizanami
 version_code = 1
-[project]
-title = YOKAI: Shadow of Izanami
