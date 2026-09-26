@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Correct GUI position schema.
+Bundled built-in UI font.
