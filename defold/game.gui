@@ -1,7 +1,7 @@
 script: "/game.gui_script"
 fonts {
- name: "system"
- font: "/builtins/fonts/system_font.font"
+ name: "ui"
+ font: "/ui.font"
 }
 textures {
  name: "none"
@@ -37,7 +37,7 @@ nodes {
   y: 100.0
  }
  text: "YOKAI"
- font: "system"
+ font: "ui"
  color {
   x: 0.91
   y: 0.78
