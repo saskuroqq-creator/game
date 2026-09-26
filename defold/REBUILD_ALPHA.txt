@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Standard bootstrap collection + game object + GUI.
+Valid GUI node enums.
