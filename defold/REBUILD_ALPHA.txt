@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Valid GUI node enums.
+Correct GUI position schema.
