@@ -59,21 +59,36 @@ func _ready():
     call_deferred("_start_alpha")
 
 func _start_alpha():
+    # Safe boot: keep the first frame lightweight and postpone all heavy world work.
     build_ui()
-    say("YOKAI ALPHA 0.2 • BOOT OK",3)
+    say("YOKAI • SAFE BOOT",2.0)
     await get_tree().process_frame
     build_world()
     await get_tree().process_frame
     build_player()
     await get_tree().process_frame
-    for i in range(10): spawn_enemy(Vector3(-24+(i%5)*12,0,-14+(i/5)*18),i%4==0)
-    spawn_enemy(Vector3(0,0,-34),true)
+    call_deferred("_finish_alpha_boot")
+
+func _finish_alpha_boot():
+    await get_tree().process_frame
+    build_world_decorations()
+    await get_tree().process_frame
     build_open_world_zones()
+    await get_tree().process_frame
     build_soul_caches()
+    await get_tree().process_frame
     build_shrines()
+    await get_tree().process_frame
+    # Keep the first combat frame small; waves add enemies later.
+    for i in range(5):
+        spawn_enemy(Vector3(-18+(i%3)*12,0,-10+(i/3)*14),i==4)
+        await get_tree().process_frame
     spawn_enemy(Vector3(-62,0,-58),false,"ONI GUARDIAN")
+    await get_tree().process_frame
     spawn_enemy(Vector3(64,0,-48),false,"KITSUNE WARDEN")
+    await get_tree().process_frame
     spawn_enemy(Vector3(58,0,58),false,"MOURNING SAMURAI")
+    say("YOKAI ALPHA 0.2 • READY",2.0)
 
 func _process(d):
     world_time+=d
@@ -115,41 +130,91 @@ func make_mat(c:Color,r=.5,e=0.0):
     return m
 
 func build_world():
-    var env=WorldEnvironment.new();var e=Environment.new()
-    e.background_mode=Environment.BG_COLOR;e.background_color=Color("#020207")
-    e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#51416f");e.ambient_light_energy=.52
-    e.tonemap_mode=Environment.TONE_MAPPER_LINEAR;e.glow_enabled=false;e.volumetric_fog_enabled=false;e.fog_enabled=false
-    env.environment=e;add_child(env)
-    var moon_mesh=MeshInstance3D.new();var moon_sphere=SphereMesh.new();moon_sphere.radius=4.6;moon_sphere.height=9.2;moon_mesh.mesh=moon_sphere;moon_mesh.position=Vector3(-10,16,-48);moon_mesh.material_override=make_mat(Color("#b34b6a"),.22,2.6);add_child(moon_mesh)
-    var moon_light=OmniLight3D.new();moon_light.position=moon_mesh.position;moon_light.light_color=Color("#b85a7c");moon_light.light_energy=3.2;moon_light.omni_range=34;add_child(moon_light)
-    var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
-    var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(240,1,240);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
-    var cs=CollisionShape3D.new();var bs=BoxShape3D.new();bs.size=Vector3(240,1,240);cs.shape=bs;ground.add_child(cs);add_child(ground)
-    for i in range(72):
-        var a=TAU*i/72.0;var r=54+sin(i*2.1)*8;pillar(Vector3(cos(a)*r,0,sin(a)*r),3+float(i%5)*.7)
-    for i in range(14):
-        var a=TAU*i/14.0;lantern(Vector3(cos(a)*13,0,sin(a)*13))
-    for z in [-5.0,-18.0,-31.0]: gate(z)
-    for i in range(20): tree(Vector3(-35+(i%10)*7,0,-39+(i/10)*8))
-    for i in range(42): rock(Vector3(-42+fmod(i*17.3,84),0,-42+fmod(i*31.7,84)),0.5+fmod(i*1.7,1.8))
-    for i in range(20): shrine_prop(Vector3(-40+fmod(i*23.1,80),0,-38+fmod(i*13.7,76)))
-    cathedral_ruin(Vector3(0,0,-40))
-    cathedral_ruin(Vector3(29,0,-18))
-    for z in [-9.0,-25.0,-39.0]: stone_arch(Vector3(-27,0,z),1.0)
-    for i in range(24): grave_cluster(Vector3(-30+fmod(i*11.7,60),0,-36+fmod(i*17.1,68)),i%3==0)
-    build_region_geometry()
+    # Compatibility-safe base scene: no shadowed/dynamic lights during startup.
+    var env=WorldEnvironment.new()
+    var e=Environment.new()
+    e.background_mode=Environment.BG_COLOR
+    e.background_color=Color("#020207")
+    e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
+    e.ambient_light_color=Color("#51416f")
+    e.ambient_light_energy=.62
+    e.tonemap_mode=Environment.TONE_MAPPER_LINEAR
+    e.glow_enabled=false
+    e.volumetric_fog_enabled=false
+    e.fog_enabled=false
+    env.environment=e
+    add_child(env)
 
+    var moon_mesh=MeshInstance3D.new()
+    var moon_sphere=SphereMesh.new()
+    moon_sphere.radius=4.6
+    moon_sphere.height=9.2
+    moon_mesh.mesh=moon_sphere
+    moon_mesh.position=Vector3(-10,16,-48)
+    moon_mesh.material_override=make_mat(Color("#b34b6a"),.22,2.0)
+    add_child(moon_mesh)
+
+    var sun=DirectionalLight3D.new()
+    sun.rotation_degrees=Vector3(-52,-25,0)
+    sun.light_energy=.75
+    sun.shadow_enabled=false
+    sun.light_color=Color("#d8cfe0")
+    add_child(sun)
+
+    var ground=StaticBody3D.new()
+    var mi=MeshInstance3D.new()
+    var bm=BoxMesh.new()
+    bm.size=Vector3(240,1,240)
+    mi.mesh=bm
+    mi.material_override=make_mat(Color("#111116"),.95)
+    ground.add_child(mi)
+    var cs=CollisionShape3D.new()
+    var bs=BoxShape3D.new()
+    bs.size=Vector3(240,1,240)
+    cs.shape=bs
+    ground.add_child(cs)
+    add_child(ground)
+
+func build_world_decorations():
+    # Bounded geometry keeps Android startup and frame time predictable.
+    for i in range(24):
+        var a=TAU*i/24.0
+        var r=48+sin(i*2.1)*6
+        pillar(Vector3(cos(a)*r,0,sin(a)*r),3+float(i%4)*.6)
+        if i%2==0:
+            await get_tree().process_frame
+    for i in range(8):
+        var a=TAU*i/8.0
+        lantern(Vector3(cos(a)*13,0,sin(a)*13))
+    for z in [-12.0,-30.0]:
+        gate(z)
+    for i in range(10):
+        tree(Vector3(-28+(i%5)*7,0,-34+(i/5)*8))
+        if i%3==0:
+            await get_tree().process_frame
+    for i in range(18):
+        rock(Vector3(-38+fmod(i*17.3,76),0,-38+fmod(i*31.7,76)),0.5+fmod(i*1.7,1.4))
+        if i%4==0:
+            await get_tree().process_frame
+    for i in range(8):
+        shrine_prop(Vector3(-34+fmod(i*23.1,68),0,-34+fmod(i*13.7,68)))
+    cathedral_ruin(Vector3(0,0,-40))
+    stone_arch(Vector3(-27,0,-20),1.0)
+    for i in range(10):
+        grave_cluster(Vector3(-30+fmod(i*11.7,60),0,-34+fmod(i*17.1,64)),i%3==0)
+        if i%4==0:
+            await get_tree().process_frame
 
 func build_region_geometry():
     for p in [Vector3(-62,0,-58),Vector3(64,0,-48),Vector3(58,0,58),Vector3(0,0,-92)]:
-        for j in range(8):
+        for j in range(4):
             var a=TAU*j/8.0
             rock(p+Vector3(cos(a)*10,0,sin(a)*10),1.1+float(j%3)*.45)
     for x in [-78.0,-46.0]:
         for z in [-78.0,-38.0]: tree(Vector3(x,0,z))
     for x in [42.0,76.0]:
         for z in [-66.0,-30.0]: lantern(Vector3(x,0,z))
-    for i in range(10): grave_cluster(Vector3(42+fmod(i*9.3,34),0,42+fmod(i*13.7,34)),i%2==0)
+    for i in range(5): grave_cluster(Vector3(42+fmod(i*9.3,34),0,42+fmod(i*13.7,34)),i%2==0)
     stone_arch(Vector3(0,0,-78),1.35)
     stone_arch(Vector3(36,0,-48),1.25)
     stone_arch(Vector3(42,0,58),1.3)
@@ -161,7 +226,6 @@ func build_soul_caches():
         var root=Node3D.new();root.position=p;root.name="SoulCache_%d"%i;add_child(root)
         var base=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(1.15,.42,.9);base.mesh=bm;base.position.y=.22;base.material_override=make_mat(Color("#211b2c"),.72);root.add_child(base)
         var orb=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.25;sm.height=.5;orb.mesh=sm;orb.position.y=.82;orb.material_override=make_mat(Color("#a98cff"),.08,4.0);root.add_child(orb)
-        var light=OmniLight3D.new();light.position=Vector3(0,1,.0);light.light_color=Color("#9c79ff");light.light_energy=1.5;light.omni_range=3.5;root.add_child(light)
         soul_caches.append({"n":root,"value":180+i*40,"taken":false})
 
 func tick_soul_caches():
@@ -181,7 +245,6 @@ func build_shrines():
         var root=Node3D.new();root.name="Shrine_%d"%i;root.position=points[i];add_child(root)
         var base=MeshInstance3D.new();var bm=CylinderMesh.new();bm.top_radius=.75;bm.bottom_radius=1.0;bm.height=.35;base.mesh=bm;base.position.y=.18;base.material_override=make_mat(Color("#30283d"),.78);root.add_child(base)
         var orb=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.22;sm.height=.44;orb.mesh=sm;orb.position.y=1.15;orb.material_override=make_mat(Color("#d7b7ff"),.08,4.5);root.add_child(orb)
-        var flame=OmniLight3D.new();flame.position=Vector3(0,1.2,0);flame.light_color=Color("#9c79ff");flame.light_energy=1.8;flame.omni_range=4.0;root.add_child(flame)
         var tag=Label3D.new();tag.text="SHRINE";tag.position=Vector3(0,1.9,0);tag.font_size=22;tag.modulate=Color("#c9b7ff");tag.outline_size=6;root.add_child(tag)
         shrine_nodes.append(root)
 
@@ -277,7 +340,6 @@ func build_player():
     if v:player.add_child(v)
     weapon=katana();player.add_child(weapon)
     camera=Camera3D.new();camera.fov=52;camera.current=true;camera.position=Vector3(0,4.9,7.4);add_child(camera)
-    var rim=OmniLight3D.new();rim.position=Vector3(0,2.0,0.5);rim.light_color=Color("#8f6cff");rim.light_energy=1.35;rim.omni_range=6.5;player.add_child(rim)
 
 func human_visual(enemy):
     # Always build a visible fallback body first. External GLB assets are optional enhancements,
