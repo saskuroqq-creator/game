@@ -49,6 +49,11 @@ var zone_hint=""
 var discovered_zones:Dictionary={"MOONLIT VILLAGE":true}
 var soul_caches:Array[Dictionary]=[]
 var caches_collected=0
+var mini_defeated=0
+var quest_stage=0
+var quest_label:Label
+var shrine_nodes:Array[Node3D]=[]
+var shrine_cooldown=0.0
 
 func _ready():
     call_deferred("_start_alpha")
@@ -66,6 +71,7 @@ func _start_alpha():
     spawn_enemy(Vector3(0,0,-34),true)
     build_open_world_zones()
     build_soul_caches()
+    build_shrines()
     spawn_enemy(Vector3(-62,0,-58),false,"ONI GUARDIAN")
     spawn_enemy(Vector3(64,0,-48),false,"KITSUNE WARDEN")
     spawn_enemy(Vector3(58,0,58),false,"MOURNING SAMURAI")
@@ -79,6 +85,8 @@ func _process(d):
     stamina=minf(100,stamina+d*(20+mobility*3)); mana=minf(100,mana+d*(5+magic_power*1.5))
     wave_timer-=d
     tick_soul_caches()
+    tick_shrines(d)
+    update_quest()
     if wave_timer<=0 and not paused:
         wave_timer=5.5
         var living=0
@@ -169,6 +177,48 @@ func tick_soul_caches():
             impact_ring(cache.n.position+Vector3.UP*.2,1.0,Color("#a98cff"))
             say("SOUL CACHE +%d"%int(cache.value),1.2)
             cache.n.visible=false
+
+func build_shrines():
+    var points=[Vector3(0,22,0),Vector3(-62,0,-58),Vector3(64,0,-48),Vector3(58,0,58),Vector3(0,0,-92)]
+    for i in range(points.size()):
+        var root=Node3D.new();root.name="Shrine_%d"%i;root.position=points[i];add_child(root)
+        var base=MeshInstance3D.new();var bm=CylinderMesh.new();bm.top_radius=.75;bm.bottom_radius=1.0;bm.height=.35;base.mesh=bm;base.position.y=.18;base.material_override=make_mat(Color("#30283d"),.78);root.add_child(base)
+        var orb=MeshInstance3D.new();var sm=SphereMesh.new();sm.radius=.22;sm.height=.44;orb.mesh=sm;orb.position.y=1.15;orb.material_override=make_mat(Color("#d7b7ff"),.08,4.5);root.add_child(orb)
+        var flame=OmniLight3D.new();flame.position=Vector3(0,1.2,0);flame.light_color=Color("#9c79ff");flame.light_energy=1.8;flame.omni_range=4.0;root.add_child(flame)
+        var tag=Label3D.new();tag.text="SHRINE";tag.position=Vector3(0,1.9,0);tag.font_size=22;tag.modulate=Color("#c9b7ff");tag.outline_size=6;root.add_child(tag)
+        shrine_nodes.append(root)
+
+func tick_shrines(d):
+    shrine_cooldown=maxf(0,shrine_cooldown-d)
+
+func rest_at_shrine():
+    if shrine_cooldown>0 or not player:return
+    for shrine in shrine_nodes:
+        if is_instance_valid(shrine) and player.position.distance_to(shrine.position)<3.0:
+            hp=100;stamina=100;mana=100;invuln_t=.8;shrine_cooldown=2.0
+            burst(shrine.position+Vector3.UP,Color("#d7b7ff"),18)
+            impact_ring(shrine.position+Vector3.UP*.2,1.5,Color("#9c79ff"))
+            say("SHRINE RESTORED • HP / STAMINA / MANA",1.6)
+            return
+    say("APPROACH A SHRINE",.8)
+
+func update_quest():
+    if quest_stage==0 and caches_collected>=3:
+        quest_stage=1;say("QUEST UPDATED • HUNT THE YOMI",1.6)
+    elif quest_stage==1 and defeated>=10:
+        quest_stage=2;say("QUEST UPDATED • DEFEAT A GUARDIAN",1.6)
+    elif quest_stage==2 and mini_defeated>=1:
+        quest_stage=3;say("QUEST UPDATED • ENTER YOMI GATE",1.6)
+    elif quest_stage==3 and map_zone=="YOMI GATE":
+        quest_stage=4;souls+=1000;skill_points+=2;say("QUEST COMPLETE • GATE OF YOMI OPENED",3.0)
+
+func quest_text():
+    match quest_stage:
+        0:return "QUEST 01 • COLLECT SOUL CACHES  %d/3"%min(caches_collected,3)
+        1:return "QUEST 02 • PURGE YOMI  %d/10"%min(defeated,10)
+        2:return "QUEST 03 • DEFEAT A GUARDIAN  %d/1"%min(mini_defeated,1)
+        3:return "QUEST 04 • REACH YOMI GATE"
+        _:return "QUEST COMPLETE • YOMI GATE AWAKENED"
 
 func build_open_world_zones():
     world_zone("MOONLIT VILLAGE",Vector3(0,0,22),Color("#8e7ad6"),14)
@@ -445,6 +495,7 @@ func damage_enemy(e,dmg,dir,launch=false):
     e.n.velocity+=dir*(7 if launch else 3);e.n.velocity.y=3.5 if launch else 1.2;hitstop=.055 if launch else .035;camera_shake=.16 if launch else .08;burst(e.n.position+Vector3.UP,Color("#ff4f86") if not launch else Color("#ffe8f4"),14 if launch else 9);impact_ring(e.n.position+Vector3.UP*.8,1.0 if launch else .65,Color("#ff5d91") if not launch else Color("#fff0fa"))
     if float(e.n.get_meta("hp"))<=0:
         souls+=100 if not e.boss else 1500;defeated+=1;gain_xp(80 if not e.boss else 600)
+        if bool(e.n.get_meta("mini",false)): mini_defeated+=1
         if e.boss:say("TSUKUYOMI DEFEATED",5)
         e.n.queue_free();enemies.erase(e)
 
@@ -595,7 +646,8 @@ func build_ui():
     hpbar=bar(layer,Vector2(34,60),Color("#d83f63"));stbar=bar(layer,Vector2(34,82),Color("#59cfa3"));mpbar=bar(layer,Vector2(34,104),Color("#7668e8"))
     info=Label.new();info.position=Vector2(530,25);info.add_theme_font_size_override("font_size",18);layer.add_child(info)
     skills=Label.new();skills.position=Vector2(34,125);skills.add_theme_font_size_override("font_size",14);layer.add_child(skills)
-    var specs=[["ATK",Vector2(940,580),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"],["MOON",Vector2(930,500),"m0"],["FIRE",Vector2(1030,455),"m1"],["VOID",Vector2(1130,455),"m2"],["PARRY",Vector2(790,610),"parry"]]
+    quest_label=Label.new();quest_label.position=Vector2(530,135);quest_label.add_theme_font_size_override("font_size",16);quest_label.add_theme_color_override("font_color",Color("#d7b7ff"));layer.add_child(quest_label)
+    var specs=[["ATK",Vector2(940,580),"attack"],["HEAVY",Vector2(1080,620),"heavy"],["DASH",Vector2(1110,520),"dash"],["MOON",Vector2(930,500),"m0"],["FIRE",Vector2(1030,455),"m1"],["VOID",Vector2(1130,455),"m2"],["PARRY",Vector2(790,610),"parry"],["SHRINE",Vector2(670,610),"shrine"]]
     for a in specs:
         var b=Button.new();b.text=a[0];b.position=a[1];b.size=Vector2(120,55);layer.add_child(b);b.pressed.connect(func():mobile(a[2]))
     var joy=VirtualJoystick.new()
@@ -625,6 +677,7 @@ func mobile(a):
     elif a=="heavy" and attack_t<=0:melee(true)
     elif a=="dash" and dash_t<=0 and stamina>=20:dash()
     elif a=="parry":parry()
+    elif a=="shrine":rest_at_shrine()
     elif a.begins_with("m") and attack_t<=0:magic(int(a.substr(1)))
 
 func upgrade_skill(kind):
@@ -677,6 +730,7 @@ func update_ui():
         info.text+="
 TSUKUYOMI  %d  • PHASE %s"%(boss_hp,phase_text)
     skills.text="BLADE %d  MAGIC %d  MOBILITY %d  |  SP %d  KILLS %d  CACHES %d/8"%[blade,magic_power,mobility,skill_points,defeated,caches_collected]
+    if quest_label:quest_label.text=quest_text()
 
 func gain_xp(a):
     xp+=a
