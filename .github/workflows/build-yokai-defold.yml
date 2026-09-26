@@ -20,7 +20,7 @@ jobs:
           curl -fL -o .bob/bob.jar https://github.com/defold/defold/releases/latest/download/bob.jar
       - name: Build Android APK
         run: |
-          java -jar .bob/bob.jar --root defold --platform arm64-android --variant release --bundle-format apk --archive --bundle-output release-defold bundle
+          java -jar .bob/bob.jar --root defold --platform arm64-android --variant release --bundle-format apk --archive --bundle-output release-defold resolve build bundle
       - name: Publish APK
         uses: actions/upload-artifact@v4
         with:
