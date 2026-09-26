@@ -1,2 +1,2 @@
 Defold gameplay alpha 2
-Magic, shrine, zones, Yomi gate, expanded HUD.
+Lua syntax normalized.
