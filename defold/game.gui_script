@@ -20,7 +20,7 @@ local message_t = 0
 local function node(id) return gui.get_node(id) end
 local function hide(id) gui.set_enabled(node(id), false) end
 local function show(id) gui.set_enabled(node(id), true) end
-local HUD={"player","hud","hp_text","st_text","mp_text","souls_text","quest","banner","attack_btn","attack_text","dash_btn","dash_text","move_pad","move_text","heavy_btn","heavy_text"}
+local HUD={"player","hud","hp_text","st_text","mp_text","souls_text","quest","banner","zone_text","attack_btn","attack_text","dash_btn","dash_text","move_pad","move_text","heavy_btn","heavy_text","magic_btn","magic_text","save_btn","save_text","shrine_btn","shrine_text","pause_btn","pause_text"}
 local function set_hud(v) for _,id in ipairs(HUD) do gui.set_enabled(node(id),v) end end
 
 local function text(id, value)
@@ -173,7 +173,7 @@ local function heavy()
 	end
 end
 
-local function dash()
+local function magic()\n\tif player.mp<25 then say("NOT ENOUGH MP",1); return end\n\tplayer.mp=player.mp-25\n\tfor i=#enemies,1,-1 do\n\t\tlocal e=enemies[i]\n\t\tif (e.x-player.x)^2+(e.y-player.y)^2<230^2 then\n\t\t\tif hit_enemy(e,34+player.level*3) then table.remove(enemies,i) end\n\t\tend\n\tend\n\tsay("TSUKI • SPIRIT BURST",1.2)\nend\n\nlocal function shrine()\n\tplayer.hp=100; player.st=100; player.mp=100\n\tsay("SHRINE • RESTORED",1.2)\nend\n\nlocal function dash()
 	if dash_cd>0 or player.st<20 then return end
 	dash_cd=.8
 	player.st=player.st-20
@@ -204,7 +204,7 @@ local function update_quest()
 		for _,c in ipairs(caches) do if c.taken then taken=taken+1 end end
 		if taken>=3 then quest_stage=1; say("QUEST • PURGE 10 YOKAI",2) end
 	elseif quest_stage==1 and defeated>=10 then quest_stage=2; say("QUEST • DEFEAT THE ONI GUARDIAN",2)
-	elseif quest_stage==2 and #enemies<=3 then quest_stage=3; say("QUEST • REACH YOMI GATE",2)
+	elseif quest_stage==2 and #enemies<=1 then quest_stage=3; say("QUEST • REACH YOMI GATE",2)\n\telseif quest_stage==3 and player.y>610 and player.x>500 and player.x<780 then quest_stage=4; player.souls=player.souls+100; say("YOMI GATE • SOUL REWARD +100",3)
 	end
 end
 
@@ -214,7 +214,7 @@ local function update_hud()
 	text("mp_text","MP "..math.floor(player.mp).."/100")
 	text("souls_text","SOULS "..player.souls.."   LV "..player.level)
 	local q={"COLLECT 3 SOUL CACHES","PURGE 10 YOKAI","DEFEAT ONI GUARDIAN","REACH YOMI GATE","YOMI GATE COMPLETE"}
-	text("quest",q[quest_stage+1] or q[5])
+	text("quest",q[quest_stage+1] or q[5])\n\ttext("zone_text", player.y>560 and "ASHEN BATTLEFIELD" or (player.x<420 and "WISTERIA FOREST" or (player.x>850 and "KITSUNE VALLEY" or "MOONLIT VILLAGE")))
 	gui.set_position(node("player"),vmath.vector3(player.x,player.y,0))
 end
 
@@ -258,7 +258,7 @@ function on_input(self,action_id,action)
 			move.x=(x-150)/150; move.y=(y-620)/120
 		elseif y>550 and x>980 then
 			if x>1110 then dash() else attack() end
-		elseif y<180 and x>1080 then heavy()
+		elseif y<180 and x>1080 then heavy()\n\t\telseif y>570 and x>950 then magic()\n\t\telseif y>620 and x<210 then save_game()\n\t\telseif y>620 and x<390 then shrine()\n\t\telseif y>620 and x>1050 then save_game()
 		elseif x>1080 and y>180 and y<420 then move.y=-1
 		end
 	end
