@@ -59,13 +59,12 @@ func _ready():
     call_deferred("_start_alpha")
 
 func _start_alpha():
-    say("YOKAI ALPHA 0.2",3)
+    build_ui()
+    say("YOKAI ALPHA 0.2 • BOOT OK",3)
     await get_tree().process_frame
     build_world()
     await get_tree().process_frame
     build_player()
-    await get_tree().process_frame
-    build_ui()
     await get_tree().process_frame
     for i in range(10): spawn_enemy(Vector3(-24+(i%5)*12,0,-14+(i/5)*18),i%4==0)
     spawn_enemy(Vector3(0,0,-34),true)
@@ -119,13 +118,11 @@ func build_world():
     var env=WorldEnvironment.new();var e=Environment.new()
     e.background_mode=Environment.BG_COLOR;e.background_color=Color("#020207")
     e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color("#51416f");e.ambient_light_energy=.52
-    e.tonemap_mode=Environment.TONE_MAPPER_AGX;e.glow_enabled=true;e.glow_intensity=1.15;e.glow_bloom=0.08
-    e.volumetric_fog_enabled=false;e.fog_enabled=true;e.fog_light_color=Color("#746b80");e.fog_density=.012;e.fog_height=.0;e.fog_height_density=.018
+    e.tonemap_mode=Environment.TONE_MAPPER_LINEAR;e.glow_enabled=false;e.volumetric_fog_enabled=false;e.fog_enabled=false
     env.environment=e;add_child(env)
     var moon_mesh=MeshInstance3D.new();var moon_sphere=SphereMesh.new();moon_sphere.radius=4.6;moon_sphere.height=9.2;moon_mesh.mesh=moon_sphere;moon_mesh.position=Vector3(-10,16,-48);moon_mesh.material_override=make_mat(Color("#b34b6a"),.22,2.6);add_child(moon_mesh)
     var moon_light=OmniLight3D.new();moon_light.position=moon_mesh.position;moon_light.light_color=Color("#b85a7c");moon_light.light_energy=3.2;moon_light.omni_range=34;add_child(moon_light)
     var sun=DirectionalLight3D.new();sun.rotation_degrees=Vector3(-52,-25,0);sun.light_energy=.9;sun.shadow_enabled=true;sun.light_color=Color("#d8cfe0");add_child(sun)
-    var moon=DirectionalLight3D.new();moon.rotation_degrees=Vector3(-48,145,0);moon.light_color=Color("#8e7ad6");moon.light_energy=.42;moon.shadow_enabled=true;add_child(moon)
     var ground=StaticBody3D.new();var mi=MeshInstance3D.new();var bm=BoxMesh.new();bm.size=Vector3(240,1,240);mi.mesh=bm;mi.material_override=make_mat(Color("#111116"),.95);ground.add_child(mi)
     var cs=CollisionShape3D.new();var bs=BoxShape3D.new();bs.size=Vector3(240,1,240);cs.shape=bs;ground.add_child(cs);add_child(ground)
     for i in range(72):
@@ -231,7 +228,6 @@ func world_zone(label:String,p:Vector3,c:Color,radius:float):
     var root=Node3D.new();root.position=p;add_child(root)
     var shrine=MeshInstance3D.new();var sm=CylinderMesh.new();sm.top_radius=1.2;sm.bottom_radius=1.6;sm.height=2.2;shrine.mesh=sm;shrine.position.y=1.1;shrine.material_override=make_mat(c,.7,.8);root.add_child(shrine)
     var ring=MeshInstance3D.new();var tm=TorusMesh.new();tm.inner_radius=radius*.72;tm.outer_radius=radius*.75;ring.mesh=tm;ring.position.y=.05;ring.material_override=make_mat(c,.9,.18);root.add_child(ring)
-    var lamp=OmniLight3D.new();lamp.position=Vector3(0,3,0);lamp.light_color=c;lamp.light_energy=1.8;lamp.omni_range=radius*.8;root.add_child(lamp)
     var tag=Label3D.new();tag.text=label;tag.position=Vector3(0,4.2,0);tag.font_size=30;tag.modulate=c;tag.outline_size=8;root.add_child(tag)
 
 func cathedral_ruin(p:Vector3):
@@ -256,7 +252,6 @@ func grave_cluster(p:Vector3,large:bool):
 
 func lantern(p):
     var n=MeshInstance3D.new();var m=CylinderMesh.new();m.top_radius=.3;m.bottom_radius=.42;m.height=1.5;n.mesh=m;n.position=p+Vector3.UP*.75;n.material_override=make_mat(Color("#3c252e"),.75);add_child(n)
-    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.5;l.light_color=Color("#ff9d5c");l.light_energy=2.2;l.omni_range=5;add_child(l)
 
 func tree(p):
     var n=Node3D.new();n.position=p;add_child(n)
@@ -269,7 +264,6 @@ func rock(p:Vector3,s:float):
 
 func shrine_prop(p:Vector3):
     var n=MeshInstance3D.new();var b=BoxMesh.new();b.size=Vector3(1.4,.35,1.4);n.mesh=b;n.position=p+Vector3.UP*.18;n.material_override=make_mat(Color("#3b3027"),.9);add_child(n)
-    var l=OmniLight3D.new();l.position=p+Vector3.UP*1.1;l.light_color=Color("#d98755");l.light_energy=.45;l.omni_range=2.5;add_child(l)
 
 func gate(z):
     for x in [-6.0,6.0]:
