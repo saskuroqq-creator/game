@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-GUI font cleanup complete.
+Artifact publishing path fixed.
