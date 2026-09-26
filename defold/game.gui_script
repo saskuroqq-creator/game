@@ -221,7 +221,8 @@ local function update_quest()
 		for _,c in ipairs(caches) do if c.taken then taken=taken+1 end end
 		if taken>=3 then quest_stage=1; say("QUEST • PURGE 10 YOKAI",2) end
 	elseif quest_stage==1 and defeated>=10 then quest_stage=2; say("QUEST • DEFEAT THE ONI GUARDIAN",2)
-	elseif quest_stage==2 and #enemies<=1 then quest_stage=3; say("QUEST • REACH YOMI GATE",2)\n\telseif quest_stage==3 and player.y>610 and player.x>500 and player.x<780 then quest_stage=4; player.souls=player.souls+100; say("YOMI GATE • SOUL REWARD +100",3)
+	elseif quest_stage==2 and #enemies<=1 then quest_stage=3; say("QUEST • REACH YOMI GATE",2)
+	elseif quest_stage==3 and player.y>610 and player.x>500 and player.x<780 then quest_stage=4; player.souls=player.souls+100; say("YOMI GATE • SOUL REWARD +100",3)
 	end
 end
 
