@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-CI trigger after build fix
+Bootstrap simplified to single root collection.
