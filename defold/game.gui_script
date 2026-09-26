@@ -173,7 +173,24 @@ local function heavy()
 	end
 end
 
-local function magic()\n\tif player.mp<25 then say("NOT ENOUGH MP",1); return end\n\tplayer.mp=player.mp-25\n\tfor i=#enemies,1,-1 do\n\t\tlocal e=enemies[i]\n\t\tif (e.x-player.x)^2+(e.y-player.y)^2<230^2 then\n\t\t\tif hit_enemy(e,34+player.level*3) then table.remove(enemies,i) end\n\t\tend\n\tend\n\tsay("TSUKI • SPIRIT BURST",1.2)\nend\n\nlocal function shrine()\n\tplayer.hp=100; player.st=100; player.mp=100\n\tsay("SHRINE • RESTORED",1.2)\nend\n\nlocal function dash()
+local function magic()
+	if player.mp<25 then say("NOT ENOUGH MP",1); return end
+	player.mp=player.mp-25
+	for i=#enemies,1,-1 do
+		local e=enemies[i]
+		if (e.x-player.x)^2+(e.y-player.y)^2<230^2 then
+			if hit_enemy(e,34+player.level*3) then table.remove(enemies,i) end
+		end
+	end
+	say("TSUKI • SPIRIT BURST",1.2)
+end
+
+local function shrine()
+	player.hp=100; player.st=100; player.mp=100
+	say("SHRINE • RESTORED",1.2)
+end
+
+local function dash()
 	if dash_cd>0 or player.st<20 then return end
 	dash_cd=.8
 	player.st=player.st-20
