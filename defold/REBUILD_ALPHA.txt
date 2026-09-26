@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-Bootstrap simplified to single root collection.
+Standard bootstrap collection + game object + GUI.
