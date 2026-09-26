@@ -126,7 +126,22 @@ func build_world():
     cathedral_ruin(Vector3(29,0,-18))
     for z in [-9.0,-25.0,-39.0]: stone_arch(Vector3(-27,0,z),1.0)
     for i in range(24): grave_cluster(Vector3(-30+fmod(i*11.7,60),0,-36+fmod(i*17.1,68)),i%3==0)
+    build_region_geometry()
 
+
+func build_region_geometry():
+    for p in [Vector3(-62,0,-58),Vector3(64,0,-48),Vector3(58,0,58),Vector3(0,0,-92)]:
+        for j in range(8):
+            var a=TAU*j/8.0
+            rock(p+Vector3(cos(a)*10,0,sin(a)*10),1.1+float(j%3)*.45)
+    for x in [-78.0,-46.0]:
+        for z in [-78.0,-38.0]: tree(Vector3(x,0,z))
+    for x in [42.0,76.0]:
+        for z in [-66.0,-30.0]: lantern(Vector3(x,0,z))
+    for i in range(10): grave_cluster(Vector3(42+fmod(i*9.3,34),0,42+fmod(i*13.7,34)),i%2==0)
+    stone_arch(Vector3(0,0,-78),1.35)
+    stone_arch(Vector3(36,0,-48),1.25)
+    stone_arch(Vector3(42,0,58),1.3)
 
 func build_open_world_zones():
     world_zone("MOONLIT VILLAGE",Vector3(0,0,22),Color("#8e7ad6"),14)
@@ -383,7 +398,7 @@ func move_player(d):
     if Input.is_action_just_pressed("dash") and dash_t<=0 and stamina>=20:dash()
     if Input.is_action_just_pressed("attack") and attack_t<=0:melee(false)
     if Input.is_action_just_pressed("heavy") and attack_t<=0:melee(true)
-    player.move_and_slide();player.position.x=clampf(player.position.x,-44,44);player.position.z=clampf(player.position.z,-44,44)
+    player.move_and_slide();player.position.x=clampf(player.position.x,-112,112);player.position.z=clampf(player.position.z,-112,112)
 
 func dash():
     stamina-=20;dash_t=.5;invuln_t=.38;player.velocity+=-player.global_transform.basis.z*(18+mobility*1.5);camera_shake=.18;burst(player.position+Vector3.UP,Color("#9c79ff"),18);dash_trail()
@@ -476,7 +491,8 @@ func tick_enemies(d):
                 burst(e.n.position+Vector3.UP*1.4,phase_color,24)
                 impact_ring(e.n.position+Vector3.UP*.15,2.2,phase_color)
                 camera_shake=.16
-                say("TSUKUYOMI • PHASE %d"%phase,1.5)
+                var phase_name=str(e.n.get_meta("mini_name","TSUKUYOMI")) if bool(e.n.get_meta("mini",false)) else "TSUKUYOMI"
+                say("%s • PHASE %d"%(phase_name,phase),1.5)
         if st>90:e.n.velocity=Vector3.ZERO
         elif dist>2.6:
             var q=to.normalized();var phase_now=int(e.n.get_meta("phase",1));var special=e.boss or bool(e.n.get_meta("mini",false));var enr=special and phase_now>=2;var elite=bool(e.n.get_meta("elite"));var enemy_type=str(e.n.get_meta("type","duelist"));var speed=3.8 if enr else (4.4 if enemy_type=="duelist" else (2.2 if enemy_type=="brute" else 2.6))
@@ -493,6 +509,17 @@ func tick_enemies(d):
                     impact_ring(e.n.position+Vector3.UP*.15,.72,Color("#ff8b6b"));burst(bolt.position,Color("#ffb18d"),5)
                 else:
                     e.a=(.45 if phase_now==3 else (.62 if phase_now==2 else .9)) if e.boss else (1.1 if enemy_type=="brute" else 1.55)
+                    var mini_name=str(e.n.get_meta("mini_name",""))
+                    if bool(e.n.get_meta("mini",false)) and mini_name=="ONI GUARDIAN":
+                        impact_ring(e.n.position+Vector3.UP*.1,2.0 if phase_now>=2 else 1.35,Color("#ff704d"))
+                        e.n.velocity+=-e.n.global_transform.basis.z*4.5
+                    elif bool(e.n.get_meta("mini",false)) and mini_name=="KITSUNE WARDEN":
+                        var fox=MeshInstance3D.new();var fm=SphereMesh.new();fm.radius=.16;fm.height=.32;fox.mesh=fm;fox.position=e.n.position+Vector3.UP*1.2;fox.material_override=make_mat(Color("#ff9a4d"),.08,4.5);add_child(fox)
+                        enemy_shots.append({"n":fox,"v":to.normalized()*15.0,"t":1.8,"d":18.0+phase_now*4.0})
+                        if phase_now>=2: e.n.position+=to.normalized()*2.5
+                    elif bool(e.n.get_meta("mini",false)) and mini_name=="MOURNING SAMURAI":
+                        e.n.velocity+=to.normalized()*(8.0+phase_now*2.0)
+                        impact_ring(e.n.position+Vector3.UP*.1,.9,Color("#c9b8ff"))
                     var attack_damage=(34 if phase_now==3 else (28 if phase_now==2 else 22)) if e.boss else ((25 if phase_now==3 else (20 if phase_now==2 else 16)) if bool(e.n.get_meta("mini",false)) else (14 if enemy_type=="brute" else 9))
                     impact_ring(e.n.position+Vector3.UP*.1,1.0 if e.boss else (.72 if enemy_type=="brute" else .55),Color("#ff4f86") if e.boss else (Color("#ff704d") if enemy_type=="brute" else Color("#9c79ff")))
                     take_damage(attack_damage)
