@@ -1,2 +1,2 @@
 YOKAI Defold rebuild alpha 1
-GUI resources normalized.
+Input bindings added.
