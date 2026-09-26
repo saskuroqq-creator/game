@@ -10,9 +10,11 @@ material: "/builtins/materials/gui.material"
 nodes {
  type: TYPE_BOX
  id: "background"
+position {
  x: 640.0
  y: 360.0
- size {
+}
+size {
   x: 1280.0
   y: 720.0
  }
