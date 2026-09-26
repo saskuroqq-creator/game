@@ -54,6 +54,7 @@ var quest_stage=0
 var quest_label:Label
 var shrine_nodes:Array[Node3D]=[]
 var shrine_cooldown=0.0
+var autosave_t=30.0
 
 func _ready():
     build_main_menu()
@@ -148,6 +149,10 @@ func _process(d):
     parry_t=maxf(0,parry_t-d); invuln_t=maxf(0,invuln_t-d)
     stamina=minf(100,stamina+d*(20+mobility*3)); mana=minf(100,mana+d*(5+magic_power*1.5))
     wave_timer-=d
+    autosave_t-=d
+    if autosave_t<=0:
+        autosave_t=30.0
+        save_game(true)
     tick_soul_caches()
     tick_shrines(d)
     update_quest()
@@ -853,16 +858,28 @@ func gain_xp(a):
     xp+=a
     while xp>=level*250:xp-=level*250;level+=1;skill_points+=1;hp=100;stamina=100;mana=100;say("LEVEL UP • SOUL LEVEL %d"%level,2)
 
-func save_game():
-    var d={"hp":hp,"stamina":stamina,"mana":mana,"souls":souls,"xp":xp,"level":level,"skill_points":skill_points,"blade":blade,"magic_power":magic_power,"mobility":mobility,"pos":[player.position.x,player.position.y,player.position.z]}
-    var f=FileAccess.open("user://yokai_save.json",FileAccess.WRITE);f.store_string(JSON.stringify(d));say("GAME SAVED",1.5)
+func save_game(silent=false):
+    if not player:return
+    var taken=[]
+    for cache in soul_caches:taken.append(bool(cache.taken))
+    var d={"version":2,"hp":hp,"stamina":stamina,"mana":mana,"souls":souls,"xp":xp,"level":level,"skill_points":skill_points,"blade":blade,"magic_power":magic_power,"mobility":mobility,"pos":[player.position.x,player.position.y,player.position.z],"wave":wave,"defeated":defeated,"caches_collected":caches_collected,"mini_defeated":mini_defeated,"quest_stage":quest_stage,"cache_taken":taken}
+    var f=FileAccess.open("user://yokai_save.json",FileAccess.WRITE)
+    if f:
+        f.store_string(JSON.stringify(d))
+        if not silent:say("GAME SAVED",1.5)
 
 func load_game():
     if not FileAccess.file_exists("user://yokai_save.json"):say("NO SAVE FOUND",1.5);return
-    var f=FileAccess.open("user://yokai_save.json",FileAccess.READ);var d=JSON.parse_string(f.get_as_text())
+    var f=FileAccess.open("user://yokai_save.json",FileAccess.READ)
+    var d=JSON.parse_string(f.get_as_text())
     if d:
-        hp=d.get("hp",100);stamina=d.get("stamina",100);mana=d.get("mana",100);souls=d.get("souls",0);xp=d.get("xp",0);level=d.get("level",1);skill_points=d.get("skill_points",0);blade=d.get("blade",1);magic_power=d.get("magic_power",1);mobility=d.get("mobility",1)
-        var p=d.get("pos",[0,0,18]);player.position=Vector3(p[0],p[1],p[2]);say("GAME LOADED",1.5)
+        hp=d.get("hp",100);stamina=d.get("stamina",100);mana=d.get("mana",100);souls=d.get("souls",0);xp=d.get("xp",0);level=d.get("level",1);skill_points=d.get("skill_points",0);blade=d.get("blade",1);magic_power=d.get("magic_power",1);mobility=d.get("mobility",1);wave=d.get("wave",1);defeated=d.get("defeated",0);caches_collected=d.get("caches_collected",0);mini_defeated=d.get("mini_defeated",0);quest_stage=d.get("quest_stage",0)
+        var p=d.get("pos",[0,0,18]);player.position=Vector3(float(p[0]),float(p[1]),float(p[2]))
+        var taken=d.get("cache_taken",[])
+        for i in range(min(taken.size(),soul_caches.size())):
+            soul_caches[i].taken=bool(taken[i])
+            if soul_caches[i].taken and is_instance_valid(soul_caches[i].n):soul_caches[i].n.visible=false
+        say("GAME LOADED",1.5)
 
 func toggle_pause():
     paused=!paused
