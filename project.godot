@@ -14,9 +14,9 @@ window/stretch/mode="canvas_items"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="mobile"
-renderer/rendering_method.driver="vulkan"
-renderer/rendering_method.mobile.driver="vulkan"
+renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.driver="opengl3"
+renderer/rendering_method.mobile.driver="opengl3"
 textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.015,0.012,0.025,1)
 
