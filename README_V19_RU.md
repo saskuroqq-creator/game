@@ -12,4 +12,10 @@ AirSlam отправляет ближайших доступных воздуш�
 
 Проверка локально: синтаксис 56 C# файлов и 42 варианта модели HUD прошли. Реальные тесты CharacterController добавлены в Unity release validation: запуск, гравитация, потолок, приземление, иммунитет, сброс и slam при 30/60/120 FPS. Эти Unity-тесты локально не запускались — Unity отсутствует. Физику и удобство жестов необходимо проверить в APK.
 
-Сборка: YOKAI/Build Android APK либо GitHub Actions. APK: Builds/Android/YOKAI_V19_AIR_PHYSICS_RC.apk. CI требует Unity secrets. Источники V18 сохранены в Backups. Проверки на телефоне: Docs/V19_AIR_PHYSICS_PLAYTEST_RU.md.
+Сборка: YOKAI/Build Android APK либо GitHub Actions. APK: Builds/Android/YOKAI_V19_AIR_PHYSICS_RC.apk. CI требует Unity secrets. Резервный архив V18 сохранён отдельно; в Git-ветку резервные ZIP не включены. Проверки на телефоне: Docs/V19_AIR_PHYSICS_PLAYTEST_RU.md.
+
+## Пробная CI-сборка
+
+Ветка: yokai/v19-air-physics в saskuroqq-creator/game. Unity-проект добавлен отдельно от старой Godot-основы; main сохранён.
+
+Запуск 36832858272 остановился до компиляции: Missing Unity License File and no Serial was found. UNITY_LICENSE, UNITY_EMAIL и UNITY_PASSWORD в журнале пусты. APK не создан; реальная компиляция и Unity physics regression не выполнены. Нужно настроить Unity licensing для GitHub Actions в репозитории game. Значения лицензии/пароля хранятся в Actions secrets, а не в исходниках или чате.

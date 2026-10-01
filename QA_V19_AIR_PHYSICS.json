@@ -388,5 +388,7 @@
   "android_multitouch_and_ergonomics": "NOT_RUN",
   "release": "V19 1.9.0 / 190",
   "unity_air_physics_regression": "IMPLEMENTED_NOT_RUN",
-  "android_build": "PENDING"
+  "android_build": "BLOCKED_MISSING_UNITY_LICENSE_BEFORE_COMPILATION",
+  "github_commit": "b1a90ede32a60fc273b67d4e864eded78a75c39c",
+  "github_run": "https://github.com/saskuroqq-creator/game/actions/runs/36832858272"
 }
