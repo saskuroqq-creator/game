@@ -1,0 +1,392 @@
+{
+  "csharp_syntax_files": 56,
+  "csharp_syntax_errors": [],
+  "yaml": "PASS",
+  "layout_formula_model_cases": [
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        640,
+        360
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1280,
+        720
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2340,
+        1080
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        2400,
+        1080
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1080,
+        2400
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 0.85,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 0.85,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 1,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 1,
+      "notch": true,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 1.15,
+      "notch": false,
+      "pass_layout": true
+    },
+    {
+      "resolution": [
+        1024,
+        768
+      ],
+      "size": 1.15,
+      "notch": true,
+      "pass_layout": true
+    }
+  ],
+  "touch_conversion_model": "PASS",
+  "unity_compilation": "NOT_RUN",
+  "unity_layout_regression": "IMPLEMENTED_NOT_RUN",
+  "android_multitouch_and_ergonomics": "NOT_RUN",
+  "release": "V19 1.9.0 / 190",
+  "unity_air_physics_regression": "IMPLEMENTED_NOT_RUN",
+  "android_build": "PENDING"
+}
